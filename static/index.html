@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JalMarg | Urban Flood Intelligence Platform</title>
+
+  <!-- MapLibre GL JS Dependencies -->
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --bg-base: #0c0f14;
+      --bg-surface: #141820;
+      --bg-surface-alt: #1a202c;
+      --border-subtle: #242c38;
+      --border-accent: #333d4e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-warm: #c26928;
+      --accent-warm-hover: #b05c1e;
+      --status-green: #22c55e;
+      --status-amber: #b47d28;
+      --status-red: #e11d48;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background-color: var(--bg-base);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-main);
+    }
+
+    /* Enterprise Hero Overlay */
+    #heroOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 999999;
+      background-color: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      transition: opacity 0.7s ease, visibility 0.7s ease;
+    }
+
+    .hero-topo-bg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      opacity: 0.07;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%2338bdf8' stroke-width='1.25'%3E%3Cpath d='M-100,200 C150,120 250,380 500,260 C700,150 820,320 950,240'/%3E%3Cpath d='M-100,260 C140,180 240,440 500,320 C690,210 810,380 950,300'/%3E%3Cpath d='M-100,320 C130,240 230,500 500,380 C680,270 800,440 950,360'/%3E%3Cpath d='M-100,380 C120,300 220,560 500,440 C670,330 790,500 950,420'/%3E%3Cpath d='M-100,440 C110,360 210,620 500,500 C660,390 780,560 950,480'/%3E%3Cpath d='M-100,500 C100,420 200,680 500,560 C650,450 770,620 950,540'/%3E%3Cpath d='M-100,560 C90,480 190,740 500,620 C640,510 760,680 950,600'/%3E%3Cpath d='M-100,620 C80,540 180,800 500,680 C630,570 750,740 950,660'/%3E%3Cpath d='M-100,680 C70,600 170,860 500,740 C620,630 740,800 950,720'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 800px 800px;
+    }
+
+    #waterCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1;
+      opacity: 1;
+      pointer-events: none;
+    }
+
+    .btn-cta-enterprise {
+      background-color: var(--accent-warm);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      transition: all 0.15s ease-in-out;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+    }
+    .btn-cta-enterprise:hover {
+      background-color: var(--accent-warm-hover);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .search-input {
+      background: var(--bg-base);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      outline: none;
+      width: 190px;
+    }
+    .search-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 2000;
+    }
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      letter-spacing: 0.01em;
+    }
+    .brand-icon {
+      font-size: 14px;
+      color: var(--accent-blue);
+      display: inline-block;
+    }
+    .nav-tabs { display: flex; gap: 4px; }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover { color: var(--text-main); background: var(--bg-surface-alt); }
+    .tab-btn.active {
+      color: var(--text-main);
+      background: var(--bg-surface-alt);
+      border-color: var(--border-subtle);
+      border-bottom-color: var(--accent-blue);
+      border-bottom-width: 2px;
+    }
+
+    .main-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .table-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      background: var(--bg-surface-alt);
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+    }
+    tr:last-child td { border-bottom: none; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+    .status-danger {
+      background: rgba(225, 29, 72, 0.12);
+      border-color: rgba(225, 29, 72, 0.35);
+      color: #fb7185;
+    }
+    .status-warning {
+      background: rgba(180, 125, 40, 0.14);
+      border-color: rgba(180, 125, 40, 0.35);
+      color: #eab308;
+    }
+    .status-safe {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+    }
+
+    .map-wrapper {
+      position: relative;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .map-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--bg-surface-alt);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .map-header h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .controls-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .scenario-dropdown {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      outline: none;
+    }
+    .scenario-dropdown:focus {
+      border-color: var(--accent-blue);
+    }
+    .route-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    #map { width: 100%; height: 540px; }
+
+    .map-timeline {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(20, 24, 32, 0.94);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .map-timeline label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+    .badge-time {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-family: ui-monospace, monospace;
+      font-weight: 600;
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: rgba(20, 24, 32, 0.95);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--text-main);
+      min-width: 180px;
+      transition: all 0.2s ease;
+    }
+    .map-legend.minimized {
+      padding: 6px 10px;
+      min-width: auto;
+    }
+    .map-legend.minimized .legend-body { display: none; }
+    .map-legend h5 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .map-legend h5 .toggle-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 0 2px;
+    }
+    .legend-body {
+      margin-top: 6px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 4px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    .legend-indicator { display: flex; align-items: center; gap: 8px; }
+    .legend-color-bar { width: 14px; height: 3px; border-radius: 1px; }
+    .legend-line-dashed { width: 14px; height: 0px; border-top: 2px dashed var(--status-red); }
+    .legend-depth { color: var(--text-muted); font-size: 10px; }
+
+    .routing-status-card {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      z-index: 1000;
+      background: rgba(20, 24, 32, 0.96);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 12px;
+      display: none;
+      width: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .routing-status-card b { color: var(--text-main); }
+    .instruction-step {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 11.5px;
+      color: var(--text-main);
+    }
+    .instruction-diversion {
+      background: rgba(180, 125, 40, 0.12);
+      border-left: 2px solid var(--accent-warm);
+      padding: 4px 8px;
+      margin-top: 4px;
+      color: #eab308;
+      border-radius: 0 3px 3px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Enterprise Hero Landing Screen -->
+  <div id="heroOverlay">
+    <div class="hero-topo-bg"></div>
+    <canvas id="waterCanvas"></canvas>
+
+    <div id="heroHud" class="relative z-10 flex flex-col justify-between w-full h-full p-8 md:p-14 pointer-events-none">
+      <header class="flex items-center justify-between w-full max-w-7xl mx-auto">
+        <div class="flex items-center space-x-3">
+          <div class="w-2.5 h-2.5 bg-[#3b82f6] rounded-[2px]"></div>
+          <div class="flex flex-col">
+            <span class="text-sm font-semibold tracking-wide text-slate-100 uppercase">
+              JalMarg <span class="text-slate-400 font-normal text-xs">जलमार्ग</span>
+            </span>
+            <span class="text-[10px] text-slate-400">Urban flood monitoring platform</span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4 text-xs font-mono">
+          <span class="px-2.5 py-1 rounded-[3px] bg-[#141820] border border-[#242c38] text-slate-300">
+            ISRO MOSDAC telemetry: active
+          </span>
+        </div>
+      </header>
+
+      <div class="max-w-3xl mx-auto text-center my-auto flex flex-col items-center">
+        <div class="inline-block px-3 py-1 mb-8 rounded-[3px] bg-[#141820] border border-[#242c38] text-slate-300 text-xs font-mono">
+          Surface water accumulation engine
+        </div>
+
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white mb-6 leading-tight">
+          JalMarg
+          <span class="block mt-2 text-2xl md:text-3xl lg:text-4xl font-normal text-[#60a5fa]">
+            Urban flood monitoring & safe transit routing
+          </span>
+        </h1>
+
+        <p class="max-w-2xl text-sm md:text-base text-[#94a3b8] font-normal leading-relaxed mb-12">
+          Predictive street-level inundation modeling and flood-penalized traversal graphs. Identifies critical transit corridors and bottleneck drainage points before systemic failure occurs.
+        </p>
+
+        <button id="launchBtn" onclick="launchLiveConsole()" class="pointer-events-auto btn-cta-enterprise px-8 py-3 text-sm font-medium tracking-wide cursor-pointer">
+          Enter live monitoring console
+        </button>
+      </div>
+
+      <footer class="w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-[#242c38] pt-5">
+        <div class="flex items-center justify-between p-3.5 rounded-[4px] bg-[#141820] border border-[#242c38]">
+          <div>
+            <div class="text-xs text-[#94a3b8]">Rainfall intensity</div>
+            <div id="rainfallRateText" class="text-lg font-mono font-medium text-slate-100 mt-0.5">3.8 mm/hr</div>
+          </div>
+          <span class="text-[11px] font-mono text-[#94a3b8]">Radar input</span>
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 rounded-[4px] bg-[#141820] border border-[#242c38]">
+          <div>
+            <div class="text-xs text-[#94a3b8]">Water accumulation load</div>
+            <div id="loadPercentText" class="text-lg font-mono font-medium text-slate-100 mt-0.5">0%</div>
+          </div>
+          <div class="w-32 h-8 relative flex items-center">
+            <svg id="loadChartSvg" class="w-full h-full overflow-visible" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop id="chartStopTop" offset="0%" stop-color="#22c55e" stop-opacity="0.38"></stop>
+                  <stop id="chartStopBottom" offset="100%" stop-color="#22c55e" stop-opacity="0.0"></stop>
+                </linearGradient>
+              </defs>
+              <path id="chartAreaPath" d="M 0 30 L 0 30 Q 50 30 100 30 L 100 30 Z" fill="url(#chartGradient)"></path>
+              <path id="chartLinePath" d="M 0 30 Q 50 30 100 30" fill="none" stroke="#22c55e" stroke-width="1.75" stroke-linecap="round"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 rounded-[4px] bg-[#141820] border border-[#242c38]">
+          <div>
+            <div class="text-xs text-[#94a3b8]">Inundation risk status</div>
+            <div id="riskStatusText" class="text-lg font-mono font-medium text-[#22c55e] mt-0.5">Normal</div>
+          </div>
+          <div id="riskStatusDot" class="w-2.5 h-2.5 rounded-full bg-[#22c55e]" style="box-shadow: 0 0 5px rgba(34, 197, 94, 0.45);"></div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Main Navigation -->
+  <header class="navbar">
+    <div class="brand-section">
+      <span class="brand-icon">■</span>
+      <span>JalMarg <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">| Urban flood nowcasting & safe routing</span></span>
+    </div>
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="showTab('nowcast')">Live map & table</button>
+      <button class="tab-btn" onclick="showTab('alerts')">Active alerts</button>
+      <button class="tab-btn" onclick="showTab('municipal')">Municipal pumps (ICCC)</button>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <div id="tab-nowcast" class="tab-panel active">
+      <div class="table-card" style="margin-bottom: 16px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Corridor / street</th>
+              <th>Classification</th>
+              <th>Road slope</th>
+              <th>Peak forecast depth</th>
+              <th>Advisory status</th>
+            </tr>
+          </thead>
+          <tbody id="corridorTableBody">
+            <tr>
+              <td colspan="5" style="text-align:center; color:var(--text-muted);">Loading street network telemetry...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="map-wrapper">
+        <div class="map-header">
+          <h3 id="mapLocationTitle">Connaught Place, Delhi — Street runoff & safe routing (3D Vector View)</h3>
+          <div class="controls-row">
+            <select id="quickCitySelect" class="scenario-dropdown" onchange="jumpToPreset(this.value)">
+              <option value="28.6315,77.2167,Connaught Place Delhi" selected>CP, New Delhi</option>
+              <option value="28.5450,77.1926,IIT Delhi">IIT Delhi</option>
+              <option value="19.0182,72.8434,Dadar Mumbai">Dadar, Mumbai</option>
+              <option value="18.9986,72.8428,Hindmata Mumbai">Hindmata / Parel</option>
+              <option value="13.0827,80.2707,Chennai Central">Chennai Central</option>
+              <option value="23.2064,77.4601,AIIMS Bhopal">AIIMS, Bhopal</option>
+              <option value="12.9716,77.5946,MG Road Bengaluru">Bengaluru Central</option>
+            </select>
+
+            <select id="scenarioSelector" class="scenario-dropdown" onchange="handleScenarioChange()">
+              <option value="mosdac" selected>Live Telemetry (MOSDAC / Meteo)</option>
+              <option value="moderate">Moderate rain (8-14 mm)</option>
+              <option value="deluge">Severe deluge (30-45 mm)</option>
+              <option value="cloudburst">Extreme cloudburst (55-85 mm)</option>
+            </select>
+
+            <select id="profileSelector" class="scenario-dropdown" onchange="handleProfileChange()">
+              <option value="car" selected>Vehicle: Car</option>
+              <option value="ambulance">Ambulance (High Clearance)</option>
+              <option value="fire_tender">Fire Tender</option>
+              <option value="ndrf_truck">NDRF Rescue Truck</option>
+            </select>
+
+            <input type="text" id="locationSearchInput" class="search-input" placeholder="Search location..." onkeydown="handleSearchKey(event)" />
+
+            <span class="route-hint">Click 2 points to route</span>
+          </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div id="routeStatusCard" class="routing-status-card">
+          <div style="font-weight:600; margin-bottom:6px; color:var(--text-main); display:flex; justify-content:space-between;">
+            <span>Route Comparative Analysis</span>
+            <span onclick="clearRouting()" style="cursor:pointer; color:var(--text-muted);">✕</span>
+          </div>
+          <div><b>Default route:</b> <span id="defaultRouteStat">-</span></div>
+          <div style="margin-top:4px;"><b>JalMarg safe route:</b> <span id="safeRouteStat">-</span></div>
+          
+          <!-- Turn-by-Turn Deep Link CTA -->
+          <div id="navActionContainer" style="margin-top: 10px; display: none;">
+            <a id="gmapsNavBtn" href="#" target="_blank" rel="noopener noreferrer" 
+               class="flex items-center justify-center gap-2 w-full py-2 px-3 text-xs font-semibold rounded text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors shadow-sm text-center">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              <span>Navigate Safe Route in Google Maps</span>
+            </a>
+          </div>
+
+          <div id="instructionPanel" style="margin-top: 10px; max-height: 160px; overflow-y: auto;"></div>
+        </div>
+
+        <div id="mapLegend" class="map-legend">
+          <h5 onclick="toggleLegend()">
+            <span>Legend</span>
+            <button id="legendToggleBtn" class="toggle-btn">−</button>
+          </h5>
+          <div class="legend-body">
+            <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Navigation routes</div>
+            <div class="legend-item">
+              <span class="legend-indicator">
+                <span class="legend-color-bar" style="background:var(--status-green); height:3px;"></span>
+                <span>Safe diversion</span>
+              </span>
+            </div>
+            <div class="legend-item" style="margin-bottom: 8px;">
+              <span class="legend-indicator">
+                <span class="legend-line-dashed"></span>
+                <span>Default (submerged)</span>
+              </span>
+            </div>
+
+            <div style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Water depth</div>
+            <div class="legend-item">
+              <span class="legend-indicator">
+                <span class="legend-color-bar" style="background:var(--status-red);"></span>
+                <span>Severe</span>
+              </span>
+              <span class="legend-depth">&gt; 25 cm</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-indicator">
+                <span class="legend-color-bar" style="background:var(--accent-warm);"></span>
+                <span>High risk</span>
+              </span>
+              <span class="legend-depth">15 – 25 cm</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-indicator">
+                <span class="legend-color-bar" style="background:var(--status-amber);"></span>
+                <span>Moderate</span>
+              </span>
+              <span class="legend-depth">5 – 15 cm</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-indicator">
+                <span class="legend-color-bar" style="background:var(--status-green);"></span>
+                <span>Passable</span>
+              </span>
+              <span class="legend-depth">&lt; 5 cm</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-timeline">
+          <label>Timeline:</label>
+          <input type="range" id="timeSlider" min="0" max="7" value="2" step="1" />
+          <span id="timeBadge" class="badge-time">+45 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-alerts" class="tab-panel">
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Alert category</th>
+              <th>Issuing agency</th>
+              <th>Target corridor</th>
+              <th>Safety action</th>
+            </tr>
+          </thead>
+          <tbody id="fullAlertsBody">
+            <tr>
+              <td colspan="5" style="text-align:center; color:var(--text-muted);">Loading active alerts for viewport...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-municipal" class="tab-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <h2 style="margin:0; font-size:15px; color:var(--text-main); font-weight:600;">Dewatering pump allocation scheduler</h2>
+          <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-muted);">
+            Disaster management cell • Automated resource dispatch optimization
+          </p>
+        </div>
+        <button onclick="loadPumpDispatch()" class="btn-cta-enterprise px-3.5 py-1.5 text-xs font-medium cursor-pointer">
+          Recompute pump allocation
+        </button>
+      </div>
+
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Target corridor</th>
+              <th>Inundation volume</th>
+              <th>Water depth</th>
+              <th>Units required</th>
+              <th>Work order status</th>
+            </tr>
+          </thead>
+          <tbody id="pumpDispatchBody">
+            <tr>
+              <td colspan="6" style="text-align:center; color:var(--text-muted);">Run allocation model to generate pump dispatch plan.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* Atmospheric Rain Droplet & Visible Hydrologic Surface Engine */
+    let heroActive = true;
+    let heroTransitioning = false;
+    let transitionProgress = 0;
+
+    const canvas = document.getElementById("waterCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    let currentLoad = 0;
+    let targetLoad = 0;
+    let wavePhase = 0;
+    let animFrameId;
+
+    const droplets = [];
+    const MAX_DROPLETS = 65;
+    const ripples = [];
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+
+    function spawnDroplet() {
+      if (droplets.length >= MAX_DROPLETS) return;
+      const radius = 1.0 + Math.random() * 2.2;
+      droplets.push({
+        x: Math.random() * width,
+        y: -10 - Math.random() * 20,
+        r: radius,
+        vy: 120 + Math.random() * 180 + radius * 35,
+        vx: (Math.random() - 0.5) * 8,
+        opacity: 0.25 + Math.random() * 0.45,
+        trail: []
+      });
+    }
+
+    function addRipple(x, y) {
+      if (ripples.length > 18) ripples.shift();
+      ripples.push({
+        x: x,
+        y: y,
+        r: 1,
+        maxR: 12 + Math.random() * 16,
+        alpha: 0.45
+      });
+    }
+
+    let lastTime = performance.now();
+    let simCycleTimer = 0;
+    let dropletSpawnTimer = 0;
+
+    function waterLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      if (!document.hidden && heroActive) {
+        updateSimulationState(dt);
+        renderWaterAndDroplets(dt);
+      }
+
+      if (heroActive) {
+        animFrameId = requestAnimationFrame(waterLoop);
+      }
+    }
+    animFrameId = requestAnimationFrame(waterLoop);
+
+    function updateSimulationState(dt) {
+      wavePhase += dt * 1.8;
+
+      if (!heroTransitioning) {
+        simCycleTimer += dt;
+        dropletSpawnTimer += dt;
+
+        if (dropletSpawnTimer >= 0.06) {
+          dropletSpawnTimer = 0;
+          spawnDroplet();
+        }
+
+        const cycleProgress = (simCycleTimer % 24) / 24;
+        if (cycleProgress < 0.45) {
+          targetLoad = (cycleProgress / 0.45) * 78;
+        } else if (cycleProgress < 0.65) {
+          targetLoad = 78 - ((cycleProgress - 0.45) / 0.20) * 45;
+        } else {
+          targetLoad = 33 + Math.sin(cycleProgress * Math.PI * 4) * 12;
+        }
+      } else {
+        targetLoad = 0;
+        transitionProgress += dt * 1.25;
+        if (transitionProgress >= 1.0) {
+          heroActive = false;
+          cancelAnimationFrame(animFrameId);
+          const heroOverlay = document.getElementById("heroOverlay");
+          heroOverlay.style.opacity = "0";
+          setTimeout(() => {
+            heroOverlay.style.display = "none";
+            map.resize();
+            reloadSimulation();
+          }, 600);
+        }
+      }
+
+      currentLoad += (targetLoad - currentLoad) * (dt * 1.2);
+      const roundedLoad = Math.max(0, Math.min(100, Math.round(currentLoad)));
+
+      const loadText = document.getElementById("loadPercentText");
+      const riskText = document.getElementById("riskStatusText");
+      const riskDot = document.getElementById("riskStatusDot");
+      const rainText = document.getElementById("rainfallRateText");
+
+      if (loadText) loadText.innerText = roundedLoad + "%";
+
+      let statusColor = "#22c55e";
+      if (roundedLoad > 60) {
+        statusColor = "#e11d48";
+        if (riskText) { riskText.innerText = "Critical"; riskText.style.color = "#e11d48"; }
+        if (riskDot) { riskDot.style.backgroundColor = "#e11d48"; riskDot.style.boxShadow = "0 0 6px rgba(225, 29, 72, 0.45)"; }
+        if (rainText) rainText.innerText = "28.4 mm/hr";
+      } else if (roundedLoad > 25) {
+        statusColor = "#b47d28";
+        if (riskText) { riskText.innerText = "Elevated"; riskText.style.color = "#eab308"; }
+        if (riskDot) { riskDot.style.backgroundColor = "#b47d28"; riskDot.style.boxShadow = "0 0 5px rgba(180, 125, 40, 0.45)"; }
+        if (rainText) rainText.innerText = "14.2 mm/hr";
+      } else {
+        statusColor = "#22c55e";
+        if (riskText) { riskText.innerText = "Normal"; riskText.style.color = "#22c55e"; }
+        if (riskDot) { riskDot.style.backgroundColor = "#22c55e"; riskDot.style.boxShadow = "0 0 5px rgba(34, 197, 94, 0.45)"; }
+        if (rainText) rainText.innerText = "3.8 mm/hr";
+      }
+
+      updateSvgAreaChart(roundedLoad, statusColor);
+    }
+
+    function updateSvgAreaChart(load, color) {
+      const line = document.getElementById("chartLinePath");
+      const area = document.getElementById("chartAreaPath");
+      const stopTop = document.getElementById("chartStopTop");
+      const stopBottom = document.getElementById("chartStopBottom");
+
+      if (!line || !area) return;
+
+      const norm = load / 100;
+      const yVal = 28 - norm * 22;
+      const yMid = 28 - norm * 20 + Math.sin(wavePhase) * 2;
+
+      const dLine = `M 0 ${28 - norm * 14} Q 50 ${yMid} 100 ${yVal}`;
+      const dArea = `M 0 30 L 0 ${28 - norm * 14} Q 50 ${yMid} 100 ${yVal} L 100 30 Z`;
+
+      line.setAttribute("d", dLine);
+      line.setAttribute("stroke", color);
+      area.setAttribute("d", dArea);
+
+      if (stopTop) {
+        stopTop.setAttribute("stop-color", color);
+        stopTop.setAttribute("stop-opacity", (0.2 + norm * 0.25).toString());
+      }
+      if (stopBottom) {
+        stopBottom.setAttribute("stop-color", color);
+      }
+    }
+
+    function renderWaterAndDroplets(dt) {
+      ctx.clearRect(0, 0, width, height);
+
+      const maxSurfaceHeight = Math.min(height * 0.32, 280);
+      const waterHeight = (currentLoad / 100) * maxSurfaceHeight;
+      const waterLevel = height - waterHeight;
+
+      // 1. Surface Ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        rp.r += dt * 42;
+        rp.alpha -= dt * 0.85;
+
+        if (rp.alpha <= 0 || rp.r >= rp.maxR) {
+          ripples.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(rp.x, rp.y, rp.r * 2.2, rp.r * 0.5, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(56, 189, 248, ${rp.alpha * 0.7})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 2. Realistic Rain Droplets
+      for (let i = droplets.length - 1; i >= 0; i--) {
+        const d = droplets[i];
+        d.y += d.vy * dt;
+        d.x += d.vx * dt;
+
+        d.trail.push({ x: d.x, y: d.y });
+        if (d.trail.length > 4) d.trail.shift();
+
+        if (d.trail.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(d.trail[0].x, d.trail[0].y);
+          ctx.lineTo(d.x, d.y);
+          ctx.strokeStyle = `rgba(186, 230, 253, ${d.opacity * 0.35})`;
+          ctx.lineWidth = d.r * 0.65;
+          ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(d.x, d.y, d.r * 0.9, d.r * 1.6, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(224, 242, 254, ${d.opacity * 0.85})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(d.x - d.r * 0.25, d.y - d.r * 0.5, d.r * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.fill();
+        ctx.restore();
+
+        if (d.y >= waterLevel || d.y >= height) {
+          addRipple(d.x, Math.min(d.y, waterLevel));
+          droplets.splice(i, 1);
+        }
+      }
+
+      // 3. Illuminated Water Table Surface
+      if (waterHeight >= 2) {
+        const grad = ctx.createLinearGradient(0, waterLevel, 0, height);
+        grad.addColorStop(0, "rgba(20, 68, 116, 0.65)");
+        grad.addColorStop(0.35, "rgba(14, 46, 82, 0.85)");
+        grad.addColorStop(1, "rgba(8, 26, 48, 0.98)");
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        ctx.lineTo(0, waterLevel);
+
+        const points = 10;
+        const slice = width / points;
+        const wavePoints = [];
+
+        for (let i = 0; i <= points; i++) {
+          const x = i * slice;
+          const wave = Math.sin(wavePhase + i * 0.75) * 6 + Math.cos(wavePhase * 0.6 + i * 1.1) * 3.5;
+          const y = waterLevel + wave;
+          wavePoints.push({ x, y });
+          ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(wavePoints[0].x, wavePoints[0].y);
+        for (let i = 1; i < wavePoints.length; i++) {
+          ctx.lineTo(wavePoints[i].x, wavePoints[i].y);
+        }
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(186, 230, 253, 0.85)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function launchLiveConsole() {
+      if (!heroTransitioning) {
+        heroTransitioning = true;
+        document.getElementById("heroHud").style.opacity = "0";
+        document.getElementById("heroHud").style.transition = "opacity 0.35s ease";
+      }
+    }
+
+    function toggleLegend() {
+      const legend = document.getElementById("mapLegend");
+      const btn = document.getElementById("legendToggleBtn");
+      legend.classList.toggle("minimized");
+      btn.innerText = legend.classList.contains("minimized") ? "+" : "−";
+    }
+
+    /* MapLibre 3D Vector Map & Dual Route Engine */
+    let currentLat = 28.6315;
+    let currentLon = 77.2167;
+    let simulationData = null;
+    let intervals = [15, 30, 45, 60, 75, 90, 105, 120];
+
+    let routeClickPoints = [];
+    let searchMarker = null;
+    let startMarker = null;
+    let endMarker = null;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [currentLon, currentLat],
+      zoom: 15,
+      pitch: 50,
+      bearing: -15
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+    map.on('load', () => {
+      map.addSource('road-network', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addLayer({
+        id: 'road-layer',
+        type: 'line',
+        source: 'road-network',
+        layout: { 
+          'line-join': 'round', 
+          'line-cap': 'round' 
+        },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 16, 7],
+          'line-opacity': 0.95
+        }
+      });
+
+      map.addSource('default-route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'default-route-layer',
+        type: 'line',
+        source: 'default-route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#cf222e', 'line-width': 5, 'line-dasharray': [2, 2], 'line-opacity': 0.95 }
+      });
+
+      map.addSource('safe-route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'safe-route-layer',
+        type: 'line',
+        source: 'safe-route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#22c55e', 'line-width': 7, 'line-opacity': 1.0 }
+      });
+
+      reloadSimulation();
+    });
+
+    function handleSearchKey(event) {
+      if (event.key === 'Enter') {
+        const query = event.target.value;
+        if (!query) return;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', India')}&limit=1`)
+          .then(r => r.json())
+          .then(results => {
+            if (results && results.length > 0) {
+              const lat = parseFloat(results[0].lat);
+              const lon = parseFloat(results[0].lon);
+              currentLat = lat;
+              currentLon = lon;
+              map.flyTo({ center: [lon, lat], zoom: 15, pitch: 50 });
+              document.getElementById('mapLocationTitle').innerText = `${results[0].display_name.split(',')[0]} — Street runoff & safe routing (3D Vector View)`;
+              
+              if (searchMarker) searchMarker.remove();
+              searchMarker = new maplibregl.Marker({ color: '#3b82f6' }).setLngLat([lon, lat]).addTo(map);
+
+              clearRouting();
+              reloadSimulation();
+            } else {
+              alert('Location not found in India.');
+            }
+          })
+          .catch(err => console.error('Search error:', err));
+      }
+    }
+
+    map.on('click', (e) => {
+      const lngLat = [e.lngLat.lng, e.lngLat.lat];
+      
+      if (routeClickPoints.length >= 2) {
+        clearRouting();
+      }
+
+      routeClickPoints.push(lngLat);
+
+      if (routeClickPoints.length === 1) {
+        startMarker = new maplibregl.Marker({ color: '#22c55e' }).setLngLat(lngLat).addTo(map);
+      } else if (routeClickPoints.length === 2) {
+        endMarker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat(lngLat).addTo(map);
+        triggerSafeRouting(
+          { lat: routeClickPoints[0][1], lng: routeClickPoints[0][0] },
+          { lat: routeClickPoints[1][1], lng: routeClickPoints[1][0] }
+        );
+      }
+    });
+
+    function clearRouting() {
+      routeClickPoints = [];
+      if (startMarker) { startMarker.remove(); startMarker = null; }
+      if (endMarker) { endMarker.remove(); endMarker = null; }
+      
+      if (map.getSource('default-route')) {
+        map.getSource('default-route').setData({ type: 'FeatureCollection', features: [] });
+      }
+      if (map.getSource('safe-route')) {
+        map.getSource('safe-route').setData({ type: 'FeatureCollection', features: [] });
+      }
+      document.getElementById('routeStatusCard').style.display = 'none';
+      document.getElementById('navActionContainer').style.display = 'none';
+    }
+
+    function handleScenarioChange() {
+      reloadSimulation();
+      if (routeClickPoints.length === 2) {
+        triggerSafeRouting(
+          { lat: routeClickPoints[0][1], lng: routeClickPoints[0][0] },
+          { lat: routeClickPoints[1][1], lng: routeClickPoints[1][0] }
+        );
+      }
+    }
+
+    function handleProfileChange() {
+      if (routeClickPoints.length === 2) {
+        triggerSafeRouting(
+          { lat: routeClickPoints[0][1], lng: routeClickPoints[0][0] },
+          { lat: routeClickPoints[1][1], lng: routeClickPoints[1][0] }
+        );
+      }
+    }
+
+    function jumpToPreset(val) {
+      const [lat, lon, name] = val.split(',');
+      currentLat = parseFloat(lat);
+      currentLon = parseFloat(lon);
+      document.getElementById('mapLocationTitle').innerText = `${name} — Street runoff & safe routing (3D Vector View)`;
+      map.flyTo({ center: [currentLon, currentLat], zoom: 15, pitch: 50 });
+      clearRouting();
+      reloadSimulation();
+    }
+
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+
+      if (tabId === 'nowcast') {
+        setTimeout(() => map.resize(), 200);
+      } else if (tabId === 'municipal') {
+        loadPumpDispatch();
+      }
+    }
+
+    function getDepthColor(depthCm) {
+      return depthCm > 25 ? '#e11d48' :
+             depthCm > 15 ? '#c26928' :
+             depthCm > 5  ? '#b47d28' :
+                            '#22c55e';
+    }
+
+    function reloadSimulation() {
+      const scenario = document.getElementById('scenarioSelector').value;
+      fetch(`/api/nowcast?lat=${currentLat}&lon=${currentLon}&dist_m=1200&scenario=${scenario}`)
+        .then(r => r.json())
+        .then(data => {
+          simulationData = data;
+          intervals = data.intervals_min || intervals;
+          updateTable(data.features);
+          updateAlerts(data.alerts);
+          renderTimelineStep(parseInt(document.getElementById('timeSlider').value));
+        })
+        .catch(err => console.error("Data error:", err));
+    }
+
+    function updateTable(features) {
+      const tbody = document.getElementById('corridorTableBody');
+      tbody.innerHTML = '';
+      if (!features) return;
+      const activeStep = parseInt(document.getElementById('timeSlider').value);
+      const sorted = [...features].sort((a, b) => {
+        const da = (a.properties.depth_timeline_cm || [0])[activeStep] || 0;
+        const db = (b.properties.depth_timeline_cm || [0])[activeStep] || 0;
+        return db - da;
+      }).slice(0, 6);
+
+      sorted.forEach(f => {
+        const p = f.properties;
+        const depth = (p.depth_timeline_cm || [0])[activeStep] || 0;
+        let pill = '<span class="status-pill status-safe">Passable</span>';
+        if (depth > 25) pill = '<span class="status-pill status-danger">Submerged (&gt;25cm)</span>';
+        else if (depth > 10) pill = '<span class="status-pill status-warning">Slow traffic</span>';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="font-weight:600;">${p.name}</td>
+          <td><span style="text-transform: capitalize; color:var(--text-muted);">${p.highway}</span></td>
+          <td>${p.slope_pct}%</td>
+          <td style="font-family:ui-monospace, monospace; font-weight:600; color:${getDepthColor(depth)}">${depth} cm</td>
+          <td>${pill}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateAlerts(alerts) {
+      const tbody = document.getElementById('fullAlertsBody');
+      tbody.innerHTML = '';
+      if (!alerts || alerts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No active severe weather warnings for current viewport.</td></tr>';
+        return;
+      }
+      alerts.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="status-pill ${a.severity === 'critical' ? 'status-danger' : a.severity === 'warning' ? 'status-warning' : 'status-safe'}">${a.severity.toUpperCase()}</span></td>
+          <td style="font-weight:600;">${a.title}</td>
+          <td style="color:var(--text-muted);">${a.source}</td>
+          <td style="color:#e6edf3;">${(a.corridors || []).join(', ') || 'Sector-wide'}</td>
+          <td>${a.safety_action || a.message}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderTimelineStep(stepIdx) {
+      if (!simulationData || !simulationData.features) return;
+      const timeMin = intervals[stepIdx] || (stepIdx + 1) * 15;
+      document.getElementById('timeBadge').innerText = `+${timeMin} min`;
+      updateTable(simulationData.features);
+
+      const coloredFeatures = simulationData.features.map(f => {
+        const depth = (f.properties.depth_timeline_cm || [0])[stepIdx] || 0;
+        return {
+          ...f,
+          properties: {
+            ...f.properties,
+            color: getDepthColor(depth)
+          }
+        };
+      });
+
+      if (map.getSource('road-network')) {
+        map.getSource('road-network').setData({
+          type: 'FeatureCollection',
+          features: coloredFeatures
+        });
+      }
+    }
+
+    function parseGeoJSONCoords(geom) {
+      if (!geom) return null;
+      if (geom.type === 'LineString' && Array.isArray(geom.coordinates)) {
+        return geom.coordinates;
+      }
+      if (geom.geometry && Array.isArray(geom.geometry.coordinates)) {
+        return geom.geometry.coordinates;
+      }
+      if (Array.isArray(geom) && geom.length > 0) {
+        return Array.isArray(geom[0]) ? geom : null;
+      }
+      return null;
+    }
+
+    function buildGoogleMapsDeepLink(start, end, waypoints) {
+      const origin = `${start.lat},${start.lng}`;
+      const destination = `${end.lat},${end.lng}`;
+      let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+
+      if (waypoints && waypoints.length > 0) {
+        const waypointsStr = waypoints.map(wp => `${wp.lat},${wp.lon}`).join('|');
+        url += `&waypoints=${encodeURIComponent(waypointsStr)}`;
+      }
+      return url;
+    }
+
+    function triggerSafeRouting(start, end) {
+      const step = document.getElementById('timeSlider').value;
+      const scenario = document.getElementById('scenarioSelector').value;
+      const profile = document.getElementById('profileSelector').value;
+      const statusCard = document.getElementById('routeStatusCard');
+      const navContainer = document.getElementById('navActionContainer');
+      const navBtn = document.getElementById('gmapsNavBtn');
+      
+      statusCard.style.display = 'block';
+      navContainer.style.display = 'none';
+
+      document.getElementById('defaultRouteStat').innerText = 'Computing 3D path...';
+      document.getElementById('safeRouteStat').innerText = 'Computing 3D path...';
+      document.getElementById('instructionPanel').innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Evaluating hydrologic friction & alternate diversion corridors...</div>';
+
+      fetch(`/api/route?start_lat=${start.lat}&start_lon=${start.lng}&end_lat=${end.lat}&end_lon=${end.lng}&forecast_step=${step}&scenario=${scenario}&profile=${profile}`)
+        .then(res => res.json())
+        .then(data => {
+          const defaultRoute = data.default_route;
+          const safeRoute = data.safe_alternate_route || data.safe_route;
+
+          if (defaultRoute && defaultRoute.geometry) {
+            const coords = parseGeoJSONCoords(defaultRoute.geometry);
+            if (coords) {
+              map.getSource('default-route').setData({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: coords }
+              });
+            }
+            document.getElementById('defaultRouteStat').innerHTML = `<span style="color:#e11d48;">${defaultRoute.max_water_depth_cm} cm (${defaultRoute.status})</span>`;
+          } else {
+            document.getElementById('defaultRouteStat').innerHTML = `<span style="color:var(--text-muted);">No route found</span>`;
+          }
+
+          if (safeRoute && safeRoute.geometry) {
+            const coords = parseGeoJSONCoords(safeRoute.geometry);
+            if (coords && coords.length > 0) {
+              map.getSource('safe-route').setData({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: coords }
+              });
+
+              const bounds = coords.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(coords[0], coords[0]));
+              map.fitBounds(bounds, { padding: 60, pitch: 55, bearing: 20 });
+            }
+
+            document.getElementById('safeRouteStat').innerHTML = `<span style="color:#22c55e;">${safeRoute.max_water_depth_cm} cm (${safeRoute.status})</span>`;
+
+            // Build turn-by-turn deep link to native Google Maps
+            const waypoints = data.nav_waypoints || [];
+            navBtn.href = buildGoogleMapsDeepLink(start, end, waypoints);
+            navContainer.style.display = 'block';
+
+            const panel = document.getElementById('instructionPanel');
+            panel.innerHTML = '<div style="font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Guidance telemetry</div>';
+
+            if (safeRoute.max_water_depth_cm < (defaultRoute ? defaultRoute.max_water_depth_cm : 999)) {
+              panel.innerHTML += `
+                <div class="instruction-step">
+                  <div class="instruction-diversion">🛡️ <b>Safe Diversion Active:</b> Detour avoids high-inundation street segments.</div>
+                  <div style="margin-top:4px; font-size:11px; color:var(--text-muted);">Ponding reduced to ${safeRoute.max_water_depth_cm} cm along elevated corridor.</div>
+                </div>`;
+            } else {
+              panel.innerHTML += `<div style="color:var(--status-green); font-size:11px; margin-top:4px;">✓ Direct corridor is passable for chosen vehicle profile.</div>`;
+            }
+          } else {
+            document.getElementById('safeRouteStat').innerHTML = `<span style="color:var(--text-muted);">No safe route available</span>`;
+            document.getElementById('instructionPanel').innerHTML = `<div style="color:var(--status-red); font-size:11px;">All corridors exceed impassable depth thresholds.</div>`;
+            navContainer.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          console.error("Routing error:", err);
+          document.getElementById('defaultRouteStat').innerText = 'Routing unavailable';
+          document.getElementById('safeRouteStat').innerText = 'Routing unavailable';
+          document.getElementById('instructionPanel').innerHTML = '';
+          navContainer.style.display = 'none';
+        });
+    }
+
+    function loadPumpDispatch() {
+      const step = document.getElementById('timeSlider').value;
+      const scenario = document.getElementById('scenarioSelector').value;
+      const tbody = document.getElementById('pumpDispatchBody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Evaluating street ponding and computing pump allocations...</td></tr>';
+
+      fetch(`/api/municipal/pumps?lat=${currentLat}&lon=${currentLon}&scenario=${scenario}&forecast_step=${step}`)
+        .then(r => r.json())
+        .then(data => {
+          tbody.innerHTML = '';
+          if (!data.dispatch_orders || data.dispatch_orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--status-green);">No critical waterlogging requiring emergency pumping in current window.</td></tr>';
+            return;
+          }
+          data.dispatch_orders.forEach((o, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><span class="status-pill status-danger">#${idx + 1}</span></td>
+              <td style="font-weight:600;">${o.corridor} <span style="font-size:11px; color:var(--text-muted);">(${o.highway_class})</span></td>
+              <td style="font-family:ui-monospace, monospace; color:var(--text-main);">${o.inundation_volume_m3} m³</td>
+              <td style="font-family:ui-monospace, monospace; color:var(--status-red); font-weight:6.5;">${o.predicted_depth_cm} cm</td>
+              <td><b>${o.pumps_allocated}</b> units</td>
+              <td><span class="status-pill status-warning">${o.recommended_action}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.error("Pump fetch error:", err);
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--status-red);">Failed to run pump allocation model.</td></tr>';
+        });
+    }
+
+    document.getElementById('timeSlider').addEventListener('input', (e) => {
+      renderTimelineStep(parseInt(e.target.value));
+      if (routeClickPoints.length === 2) {
+        triggerSafeRouting(
+          { lat: routeClickPoints[0][1], lng: routeClickPoints[0][0] },
+          { lat: routeClickPoints[1][1], lng: routeClickPoints[1][0] }
+        );
+      }
+      const activeTab = document.querySelector('.tab-panel.active');
+      if (activeTab && activeTab.id === 'tab-municipal') {
+        loadPumpDispatch();
+      }
+    });
+  </script>
+</body>
+</html>
