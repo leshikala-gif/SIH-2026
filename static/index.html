@@ -955,6 +955,11 @@
     let startMarker = null;
     let endMarker = null;
 
+    // Non-blocking AbortControllers for asynchronous cancellation
+    let nowcastAbortController = null;
+    let routeAbortController = null;
+    let pumpAbortController = null;
+
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://tiles.openfreemap.org/styles/liberty',
@@ -1057,6 +1062,10 @@
     });
 
     function clearRouting() {
+      if (routeAbortController) {
+        routeAbortController.abort();
+        routeAbortController = null;
+      }
       routeClickPoints = [];
       if (startMarker) { startMarker.remove(); startMarker = null; }
       if (endMarker) { endMarker.remove(); endMarker = null; }
@@ -1070,7 +1079,6 @@
       document.getElementById('routeStatusCard').style.display = 'none';
       document.getElementById('navActionContainer').style.display = 'none';
 
-      // Explicitly guarantee legend visibility
       const legend = document.getElementById("mapLegend");
       if (legend) {
         legend.style.display = "block";
@@ -1131,8 +1139,15 @@
     }
 
     function reloadSimulation() {
+      if (nowcastAbortController) {
+        nowcastAbortController.abort();
+      }
+      nowcastAbortController = new AbortController();
+
       const scenario = document.getElementById('scenarioSelector').value;
-      fetch(`/api/nowcast?lat=${currentLat}&lon=${currentLon}&dist_m=1200&scenario=${scenario}`)
+      fetch(`/api/nowcast?lat=${currentLat}&lon=${currentLon}&dist_m=1000&scenario=${scenario}`, {
+        signal: nowcastAbortController.signal
+      })
         .then(r => r.json())
         .then(data => {
           simulationData = data;
@@ -1144,7 +1159,11 @@
           const legend = document.getElementById("mapLegend");
           if (legend) legend.style.display = "block";
         })
-        .catch(err => console.error("Data error:", err));
+        .catch(err => {
+          if (err.name !== 'AbortError') {
+            console.error("Data error:", err);
+          }
+        });
     }
 
     function updateTable(features) {
@@ -1249,6 +1268,11 @@
     }
 
     function triggerSafeRouting(start, end) {
+      if (routeAbortController) {
+        routeAbortController.abort();
+      }
+      routeAbortController = new AbortController();
+
       const step = document.getElementById('timeSlider').value;
       const scenario = document.getElementById('scenarioSelector').value;
       const profile = document.getElementById('profileSelector').value;
@@ -1263,7 +1287,9 @@
       document.getElementById('safeRouteStat').innerText = 'Computing 3D path...';
       document.getElementById('instructionPanel').innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Evaluating hydrologic friction & alternate diversion corridors...</div>';
 
-      fetch(`/api/route?start_lat=${start.lat}&start_lon=${start.lng}&end_lat=${end.lat}&end_lon=${end.lng}&forecast_step=${step}&scenario=${scenario}&profile=${profile}`)
+      fetch(`/api/route?start_lat=${start.lat}&start_lon=${start.lng}&end_lat=${end.lat}&end_lon=${end.lng}&forecast_step=${step}&scenario=${scenario}&profile=${profile}`, {
+        signal: routeAbortController.signal
+      })
         .then(res => res.json())
         .then(data => {
           const defaultRoute = data.default_route;
@@ -1320,21 +1346,30 @@
           }
         })
         .catch(err => {
-          console.error("Routing error:", err);
-          document.getElementById('defaultRouteStat').innerText = 'Routing unavailable';
-          document.getElementById('safeRouteStat').innerText = 'Routing unavailable';
-          document.getElementById('instructionPanel').innerHTML = '';
-          navContainer.style.display = 'none';
+          if (err.name !== 'AbortError') {
+            console.error("Routing error:", err);
+            document.getElementById('defaultRouteStat').innerText = 'Routing unavailable';
+            document.getElementById('safeRouteStat').innerText = 'Routing unavailable';
+            document.getElementById('instructionPanel').innerHTML = '';
+            navContainer.style.display = 'none';
+          }
         });
     }
 
     function loadPumpDispatch() {
+      if (pumpAbortController) {
+        pumpAbortController.abort();
+      }
+      pumpAbortController = new AbortController();
+
       const step = document.getElementById('timeSlider').value;
       const scenario = document.getElementById('scenarioSelector').value;
       const tbody = document.getElementById('pumpDispatchBody');
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Evaluating street ponding and computing pump allocations...</td></tr>';
 
-      fetch(`/api/municipal/pumps?lat=${currentLat}&lon=${currentLon}&scenario=${scenario}&forecast_step=${step}`)
+      fetch(`/api/municipal/pumps?lat=${currentLat}&lon=${currentLon}&scenario=${scenario}&forecast_step=${step}`, {
+        signal: pumpAbortController.signal
+      })
         .then(r => r.json())
         .then(data => {
           tbody.innerHTML = '';
@@ -1348,7 +1383,7 @@
               <td><span class="status-pill status-danger">#${idx + 1}</span></td>
               <td style="font-weight:600;">${o.corridor} <span style="font-size:11px; color:var(--text-muted);">(${o.highway_class})</span></td>
               <td style="font-family:ui-monospace, monospace; color:var(--text-main);">${o.inundation_volume_m3} m³</td>
-              <td style="font-family:ui-monospace, monospace; color:var(--status-red); font-weight:6.5;">${o.predicted_depth_cm} cm</td>
+              <td style="font-family:ui-monospace, monospace; color:var(--status-red); font-weight:600;">${o.predicted_depth_cm} cm</td>
               <td><b>${o.pumps_allocated}</b> units</td>
               <td><span class="status-pill status-warning">${o.recommended_action}</span></td>
             `;
@@ -1356,8 +1391,10 @@
           });
         })
         .catch(err => {
-          console.error("Pump fetch error:", err);
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--status-red);">Failed to run pump allocation model.</td></tr>';
+          if (err.name !== 'AbortError') {
+            console.error("Pump fetch error:", err);
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--status-red);">Failed to run pump allocation model.</td></tr>';
+          }
         });
     }
 

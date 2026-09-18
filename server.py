@@ -128,38 +128,33 @@ def attach_slope_from_dem(gdf_edges, dem_path="data/processed/slope_pct.tif", n_
     return gdf_edges
 
 def generate_natural_corridor_fallback(lat: float, lon: float, dist_m: float = 1200):
-    delta_deg = max(min(dist_m, 1800), 1000) / 111320.0
+    delta_deg = max(min(dist_m, 1400), 800) / 111320.0
     features = []
     
-    angles = [0, 25, 45, 75, 90, 115, 135, 160, 180, 205, 225, 250, 270, 295, 315, 340]
-    for idx, deg in enumerate(angles):
-        rad = math.radians(deg)
-        r = delta_deg * 0.95
-        p1 = (lon, lat)
-        p2 = (lon + r * math.cos(rad), lat + r * math.sin(rad))
+    steps = 6
+    offsets = np.linspace(-delta_deg, delta_deg, steps)
+    
+    for i, dy in enumerate(offsets):
+        y = lat + dy
         features.append({
-            "geometry": LineString([p1, p2]),
-            "name": f"Arterial Corridor {idx + 1}",
-            "highway": "primary" if idx % 2 == 0 else "secondary",
+            "geometry": LineString([(lon - delta_deg, y), (lon + delta_deg, y)]),
+            "name": f"Avenue Link {i + 1}",
+            "highway": "primary" if i in [1, 4] else "secondary",
             "slope_pct": 0.6
         })
-
-    for ring_frac in [0.45, 0.85]:
-        pts = [
-            (lon + (delta_deg * ring_frac) * math.cos(math.radians(a)),
-             lat + (delta_deg * ring_frac) * math.sin(math.radians(a)))
-            for a in range(0, 370, 20)
-        ]
+        
+    for j, dx in enumerate(offsets):
+        x = lon + dx
         features.append({
-            "geometry": LineString(pts),
-            "name": f"Ring Corridor {int(ring_frac * 100)}",
-            "highway": "secondary",
+            "geometry": LineString([(x, lat - delta_deg), (x, lat + delta_deg)]),
+            "name": f"Sector Cross {j + 1}",
+            "highway": "primary" if j in [1, 4] else "residential",
             "slope_pct": 0.5
         })
 
     return gpd.GeoDataFrame(features, crs="EPSG:4326")
 
-def get_or_fetch_edges_geojson(lat: float, lon: float, dist_m: float = 1200):
+def get_or_fetch_edges_geojson(lat: float, lon: float, dist_m: float = 1000):
     cache_key = f"roads_{round(lat, 3)}_{round(lon, 3)}.geojson"
     cache_file = os.path.join(CACHE_DIR, cache_key)
 
@@ -184,24 +179,25 @@ def get_or_fetch_edges_geojson(lat: float, lon: float, dist_m: float = 1200):
     except Exception:
         pass
 
-    delta_deg = max(min(dist_m, 1800), 1000) / 111320.0
+    delta_deg = min(dist_m, 900) / 111320.0
     south, north = round(lat - delta_deg, 5), round(lat + delta_deg, 5)
     west, east = round(lon - delta_deg, 5), round(lon + delta_deg, 5)
 
-    overpass_query = f"""[out:json][timeout:15][maxsize:268435456];
+    overpass_query = f"""[out:json][timeout:25];
 (
-  way["highway"~"motorway|trunk|primary|secondary|tertiary|residential|unclassified|living_street"]({south},{west},{north},{east});
+  way["highway"~"motorway|trunk|primary|secondary|tertiary|residential"]({south},{west},{north},{east});
 );
 out geom qt;
 """
 
     headers = {
-        "User-Agent": "JalMargPanIndiaFloodEngine/3.0 (Emergency Routing Pipeline)",
+        "User-Agent": "JalMarg-CivicHydrology-App/4.0 (contact@jalmarg.org)",
         "Accept": "application/json"
     }
+    
     endpoints = [
-        "https://overpass.kumi.systems/api/interpreter",
         "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
         "https://lz4.overpass-api.de/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
     ]
@@ -209,11 +205,11 @@ out geom qt;
     elements = None
     for ep in endpoints:
         try:
-            resp = requests.post(ep, data={"data": overpass_query}, headers=headers, timeout=10)
+            resp = requests.post(ep, data={"data": overpass_query}, headers=headers, timeout=20)
             if resp.status_code == 200:
                 data = resp.json()
                 el = data.get("elements", [])
-                if el and len(el) > 0:
+                if el:
                     elements = el
                     break
         except Exception:
@@ -227,7 +223,7 @@ out geom qt;
                 if len(pts) >= 2:
                     features.append({
                         "geometry": LineString(pts),
-                        "name": el.get("tags", {}).get("name", "Urban Arterial"),
+                        "name": el.get("tags", {}).get("name", "Arterial Link"),
                         "highway": el.get("tags", {}).get("highway", "residential"),
                         "slope_pct": 0.6
                     })
@@ -370,9 +366,9 @@ def dynamic_nowcast(
             depth_timeline.append(round(cumulative_pond_mm / 10.0, 1))
 
         max_d = max(depth_timeline) if depth_timeline else 0.0
-        if max_d >= 25.0 and st_name not in ["Live Road Corridor", "Urban Corridor", "Arterial Corridor"]:
+        if max_d >= 25.0 and st_name not in ["Live Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
             severe_streets.add(st_name)
-        elif max_d >= 15.0 and st_name not in ["Live Road Corridor", "Urban Corridor", "Arterial Corridor"]:
+        elif max_d >= 15.0 and st_name not in ["Live Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
             high_streets.add(st_name)
 
         features.append({
@@ -441,7 +437,7 @@ def calculate_safe_route(
     mid_lat = (start_lat + end_lat) / 2.0
     mid_lon = (start_lon + end_lon) / 2.0
 
-    gdf, _ = get_or_fetch_edges_geojson(mid_lat, mid_lon, dist_m=1500)
+    gdf, _ = get_or_fetch_edges_geojson(mid_lat, mid_lon, dist_m=1200)
 
     fallback_geojson = {
         "type": "LineString",
@@ -575,7 +571,7 @@ def get_pump_dispatch(
     scenario: str = Query("mosdac", description="Precipitation mode"),
     forecast_step: int = Query(2, ge=0, le=7, description="Forecast step index")
 ):
-    gdf, _ = get_or_fetch_edges_geojson(lat, lon, dist_m=1200)
+    gdf, _ = get_or_fetch_edges_geojson(lat, lon, dist_m=1000)
     if gdf is None or len(gdf) == 0:
         return {"dispatch_orders": []}
 
@@ -591,7 +587,7 @@ def get_pump_dispatch(
         raw_name = row.get("name", "")
         st_name = str(raw_name[0]) if isinstance(raw_name, (list, np.ndarray)) else str(raw_name or "")
         
-        if not st_name or st_name in ["Live Road Corridor", "Urban Corridor", "Arterial Corridor"]:
+        if not st_name or st_name in ["Live Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
             continue
 
         hw_type = str(row.get("highway", "residential"))
