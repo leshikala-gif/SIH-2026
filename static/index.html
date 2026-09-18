@@ -273,19 +273,22 @@
       font-weight: 600;
     }
 
+    /* Unbreakable Viewport-Pinned Legend */
     .map-legend {
       position: absolute;
       bottom: 16px;
       right: 16px;
-      z-index: 1000;
-      background: rgba(20, 24, 32, 0.95);
-      border: 1px solid var(--border-subtle);
+      z-index: 1500 !important;
+      background: rgba(20, 24, 32, 0.96) !important;
+      border: 1px solid var(--border-subtle) !important;
       border-radius: 4px;
       padding: 10px 14px;
       font-size: 11px;
       color: var(--text-main);
-      min-width: 180px;
-      transition: all 0.2s ease;
+      min-width: 190px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.65);
+      pointer-events: auto !important;
+      display: block !important;
     }
     .map-legend.minimized {
       padding: 6px 10px;
@@ -301,6 +304,7 @@
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
+      user-select: none;
     }
     .map-legend h5 .toggle-btn {
       background: none;
@@ -935,6 +939,7 @@
     function toggleLegend() {
       const legend = document.getElementById("mapLegend");
       const btn = document.getElementById("legendToggleBtn");
+      if (!legend) return;
       legend.classList.toggle("minimized");
       btn.innerText = legend.classList.contains("minimized") ? "+" : "−";
     }
@@ -1064,6 +1069,12 @@
       }
       document.getElementById('routeStatusCard').style.display = 'none';
       document.getElementById('navActionContainer').style.display = 'none';
+
+      // Explicitly guarantee legend visibility
+      const legend = document.getElementById("mapLegend");
+      if (legend) {
+        legend.style.display = "block";
+      }
     }
 
     function handleScenarioChange() {
@@ -1102,7 +1113,11 @@
       document.getElementById(`tab-${tabId}`).classList.add('active');
 
       if (tabId === 'nowcast') {
-        setTimeout(() => map.resize(), 200);
+        setTimeout(() => {
+          map.resize();
+          const legend = document.getElementById("mapLegend");
+          if (legend) legend.style.display = "block";
+        }, 200);
       } else if (tabId === 'municipal') {
         loadPumpDispatch();
       }
@@ -1125,6 +1140,9 @@
           updateTable(data.features);
           updateAlerts(data.alerts);
           renderTimelineStep(parseInt(document.getElementById('timeSlider').value));
+          
+          const legend = document.getElementById("mapLegend");
+          if (legend) legend.style.display = "block";
         })
         .catch(err => console.error("Data error:", err));
     }
