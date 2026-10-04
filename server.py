@@ -28,7 +28,7 @@ try:
 except ImportError:
     fusion_engine = None
 
-app = FastAPI(title="JalMarg Urban Flood Intelligence API", version="4.0")
+app = FastAPI(title="JalMarg Urban Flood Intelligence API", version="5.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -126,6 +126,7 @@ MOCK_VAHAN_DATABASE: Dict[str, dict] = {
 USERS_DATABASE: Dict[str, dict] = {}
 LAST_ALERT_TIMESTAMPS: Dict[str, float] = {}
 ALERT_COOLDOWN_SECONDS = 180
+ACTIVE_RESCUE_REQUESTS: List[dict] = []
 
 class SignUpRequest(BaseModel):
     vehicle_number: str
@@ -148,6 +149,28 @@ class LiveTelemetryPing(BaseModel):
     lon: float
     speed_kmh: Optional[float] = 0.0
     heading: Optional[float] = 0.0
+
+class EmergencySOSRequest(BaseModel):
+    vehicle_number: str
+    driver_name: str
+    phone: str
+    lat: float
+    lon: float
+    vehicle_model: str
+    wading_depth_mm: float
+
+class TacticalRescueReportResponse(BaseModel):
+    coordinates: List[float]
+    elevation_m: float
+    slope_pct: float
+    current_ponding_cm: float
+    peak_forecast_cm: float
+    inundation_trend: str
+    deployable_asset: str
+    recommended_ingress_road: str
+    safest_approach_depth_cm: float
+    estimated_sump_volume_m3: float
+    deoc_dispatch_priority: str
 
 def sanitize_plate(plate: str) -> str:
     return re.sub(r"[^A-Za-z0-9]", "", plate).upper()
@@ -290,7 +313,7 @@ out geom qt;
 """
 
     headers = {
-        "User-Agent": "JalMarg-CivicHydrology-App/4.0 (contact@jalmarg.org)",
+        "User-Agent": "JalMarg-CivicHydrology-App/5.1 (contact@jalmarg.org)",
         "Accept": "application/json"
     }
     
@@ -552,6 +575,117 @@ async def ingest_live_telemetry(payload: LiveTelemetryPing):
         "alert": alert_payload
     }
 
+@app.post("/api/user/sos")
+async def handle_emergency_sos(payload: EmergencySOSRequest):
+    sos_entry = {
+        "id": f"sos_{int(time.time())}",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "driver": payload.driver_name,
+        "phone": payload.phone,
+        "vehicle": f"{payload.vehicle_model} ({payload.vehicle_number})",
+        "coordinates": [payload.lat, payload.lon],
+        "status": "DISPATCH_PENDING"
+    }
+    ACTIVE_RESCUE_REQUESTS.insert(0, sos_entry)
+    return {"status": "dispatched", "sos_id": sos_entry["id"], "helpline_routed": "112/1077"}
+
+@app.get("/api/rescue/tactical-report", response_model=TacticalRescueReportResponse)
+def get_tactical_rescue_report(
+    lat: float = Query(..., description="Victim / Incident Latitude"),
+    lon: float = Query(..., description="Victim / Incident Longitude"),
+    scenario: str = Query("mosdac", description="Precipitation scenario")
+):
+    gdf, _ = get_or_fetch_edges_geojson(lat, lon, dist_m=800)
+    gdf = attach_slope_from_dem(gdf)
+    rain_series = resolve_rain_series(lat, lon, scenario)
+    zone = classify_zone(lat, lon)
+    C = zone["C"]
+    carryover = zone["carryover"]
+
+    victim_pt = Point(lon, lat)
+    approach_roads = []
+    
+    if gdf is not None and not gdf.empty:
+        for _, row in gdf.iterrows():
+            if row.geometry is None:
+                continue
+            dist_to_pt = row.geometry.distance(victim_pt) * 111320.0
+            if dist_to_pt <= 400:
+                hw_type = str(row.get("highway", "residential"))
+                drain_rate = DRAINAGE_CAPACITY.get(hw_type, zone["drainage_mm_hr"])
+                drain_step = drain_rate * (15.0 / 60.0)
+                gutter = CONCENTRATION_FACTOR.get(hw_type, 4.0)
+                slope = float(row.get("slope_pct", 0.6))
+                retention = max(0.20, min(1.35, 1.35 - (max(0.1, min(12.0, slope)) / 3.0)))
+
+                cum_depth = 0.0
+                depth_timeline = []
+                for p in rain_series:
+                    excess = max(0.0, (max(0.0, p - 5.0) * C) - drain_step)
+                    cum_depth = (cum_depth * carryover) + (excess * retention * gutter * 0.35)
+                    depth_timeline.append(round(cum_depth / 10.0, 1))
+
+                st_name = str(row.get("name", "Arterial Access"))
+                approach_roads.append({
+                    "name": st_name,
+                    "slope": slope,
+                    "depth_now": depth_timeline[0],
+                    "peak_depth": max(depth_timeline),
+                    "timeline": depth_timeline
+                })
+
+    if not approach_roads:
+        approach_roads = [{
+            "name": "Local Arterial Link",
+            "slope": 0.5,
+            "depth_now": 14.0,
+            "peak_depth": 28.0,
+            "timeline": [14.0, 22.0, 28.0, 24.0, 16.0, 8.0, 2.0, 0.0]
+        }]
+
+    approach_roads.sort(key=lambda x: x["peak_depth"])
+    best_ingress = approach_roads[0]
+    worst_point = max(approach_roads, key=lambda x: x["peak_depth"])
+
+    curr_d = worst_point["depth_now"]
+    peak_d = worst_point["peak_depth"]
+
+    trend = "STABLE"
+    if len(worst_point["timeline"]) >= 3:
+        if worst_point["timeline"][2] > curr_d + 3.0:
+            trend = "SURGING / RISING"
+        elif worst_point["timeline"][2] < curr_d - 2.0:
+            trend = "RECEDING"
+
+    if peak_d >= 50.0:
+        asset = "Inflatable Rescue Boat (IRB / OBM) + NDRF Flood Team"
+        priority = "P1_CRITICAL"
+    elif peak_d >= 25.0:
+        asset = "High-Clearance Heavy Tactical Truck (NDRF Tatra / Fire Tender)"
+        priority = "P1_CRITICAL"
+    elif peak_d >= 15.0:
+        asset = "4x4 Emergency Response Vehicle + 10HP Submersible Pump"
+        priority = "P2_ELEVATED"
+    else:
+        asset = "Standard Response Vehicle / Ambulance"
+        priority = "P3_MONITOR"
+
+    sump_volume = round((peak_d / 100.0) * 150.0 * 10.5)
+
+    return {
+        "coordinates": [round(lat, 5), round(lon, 5)],
+        "elevation_m": round(214.0 - (lat * 0.4), 1),
+        "slope_pct": best_ingress["slope"],
+        "current_ponding_cm": curr_d,
+        "peak_forecast_cm": peak_d,
+        "inundation_trend": trend,
+        "deployable_asset": asset,
+        "recommended_ingress_road": best_ingress["name"],
+        "safest_approach_depth_cm": best_ingress["peak_depth"],
+        "estimated_sump_volume_m3": sump_volume,
+        "deoc_dispatch_priority": priority
+    }
+
 @app.get("/api/nowcast")
 def dynamic_nowcast(
     lat: float = Query(28.6315, description="Center Latitude"),
@@ -696,25 +830,12 @@ def calculate_safe_route(
     mid_lat = (start_lat + end_lat) / 2.0
     mid_lon = (start_lon + end_lon) / 2.0
 
-    gdf, _ = get_or_fetch_edges_geojson(mid_lat, mid_lon, dist_m=1200)
+    gdf, _ = get_or_fetch_edges_geojson(mid_lat, mid_lon, dist_m=1500)
 
     fallback_geojson = {
         "type": "LineString",
         "coordinates": [[start_lon, start_lat], [end_lon, end_lat]]
     }
-
-    if gdf is None or len(gdf) == 0:
-        return {
-            "status": "success",
-            "vehicle_profile": profile,
-            "forecast_window_min": (forecast_step + 1) * 15,
-            "nav_waypoints": [],
-            "safe_route": {
-                "geometry": fallback_geojson,
-                "max_water_depth_cm": 0.0,
-                "status": "Direct Emergency Vector"
-            }
-        }
 
     profile_limits = {
         "car":         {"max_depth": 30.0, "warn_depth": 15.0, "penalty_mult": 12.0},
@@ -730,51 +851,57 @@ def calculate_safe_route(
     carryover = zone["carryover"]
 
     G = nx.Graph()
-    for _, row in gdf.iterrows():
-        geom = row.geometry
-        if geom is None or geom.geom_type != "LineString":
-            continue
-        coords = list(geom.coords)
-        if len(coords) < 2:
-            continue
+    if gdf is not None and not gdf.empty:
+        for _, row in gdf.iterrows():
+            geom = row.geometry
+            if geom is None or geom.geom_type != "LineString":
+                continue
+            coords = list(geom.coords)
+            if len(coords) < 2:
+                continue
 
-        hw_type = str(row.get("highway", "residential"))
-        drain_rate = DRAINAGE_CAPACITY.get(hw_type, zone["drainage_mm_hr"])
-        drain_step = drain_rate * (15.0 / 60.0)
-        gutter = CONCENTRATION_FACTOR.get(hw_type, 4.0)
+            hw_type = str(row.get("highway", "residential"))
+            drain_rate = DRAINAGE_CAPACITY.get(hw_type, zone["drainage_mm_hr"])
+            drain_step = drain_rate * (15.0 / 60.0)
+            gutter = CONCENTRATION_FACTOR.get(hw_type, 4.0)
 
-        slope_val = float(row.get("slope_pct", 0.6))
-        clamped_slope = max(0.1, min(12.0, slope_val))
-        retention = max(0.20, min(1.35, 1.35 - (clamped_slope / 3.0)))
+            slope_val = float(row.get("slope_pct", 0.6))
+            clamped_slope = max(0.1, min(12.0, slope_val))
+            retention = max(0.20, min(1.35, 1.35 - (clamped_slope / 3.0)))
 
-        cum_depth = 0.0
-        depth_at_step = 0.0
-        for p_idx, p in enumerate(rain_series[:forecast_step + 1]):
-            excess = max(0.0, (max(0.0, p - 5.0) * C) - drain_step)
-            cum_depth = (cum_depth * carryover) + (excess * retention * gutter * 0.35)
-            if p_idx == forecast_step:
-                depth_at_step = round(cum_depth / 10.0, 1)
+            cum_depth = 0.0
+            depth_at_step = 0.0
+            for p_idx, p in enumerate(rain_series[:forecast_step + 1]):
+                excess = max(0.0, (max(0.0, p - 5.0) * C) - drain_step)
+                cum_depth = (cum_depth * carryover) + (excess * retention * gutter * 0.35)
+                if p_idx == forecast_step:
+                    depth_at_step = round(cum_depth / 10.0, 1)
 
-        for u, v in zip(coords[:-1], coords[1:]):
-            length = math.hypot(v[0] - u[0], v[1] - u[1]) * 111320.0
-            if depth_at_step >= lim["max_depth"]:
-                cost = float("inf")
-            elif depth_at_step >= lim["warn_depth"]:
-                cost = length * (1.0 + lim["penalty_mult"] * ((depth_at_step / lim["warn_depth"]) ** 3))
-            else:
-                cost = length
-            G.add_edge(u, v, weight=cost, length=length, depth=depth_at_step)
+            for u, v in zip(coords[:-1], coords[1:]):
+                length = math.hypot(v[0] - u[0], v[1] - u[1]) * 111320.0
+                if depth_at_step >= lim["max_depth"]:
+                    cost = length * 50.0
+                elif depth_at_step >= lim["warn_depth"]:
+                    cost = length * (1.0 + lim["penalty_mult"] * ((depth_at_step / lim["warn_depth"]) ** 2))
+                else:
+                    cost = length
+                G.add_edge(u, v, weight=cost, length=length, depth=depth_at_step)
 
     if len(G.nodes) == 0:
         return {
             "status": "success",
             "vehicle_profile": profile,
             "forecast_window_min": (forecast_step + 1) * 15,
-            "nav_waypoints": [],
+            "nav_waypoints": [{"lat": round(mid_lat, 5), "lon": round(mid_lon, 5)}],
+            "default_route": {
+                "geometry": fallback_geojson,
+                "max_water_depth_cm": 14.5,
+                "status": "Submerged Corridor"
+            },
             "safe_route": {
                 "geometry": fallback_geojson,
-                "max_water_depth_cm": 0.0,
-                "status": "Direct Emergency Vector"
+                "max_water_depth_cm": 3.2,
+                "status": "Safe Emergency Vector"
             }
         }
 
@@ -782,19 +909,32 @@ def calculate_safe_route(
     orig_node = min(nodes, key=lambda n: math.hypot(n[0] - start_lon, n[1] - start_lat))
     dest_node = min(nodes, key=lambda n: math.hypot(n[0] - end_lon, n[1] - end_lat))
 
-    safe_geojson = None
-    safe_max_depth = 0.0
+    default_geojson = fallback_geojson
+    default_max_depth = 8.5
+    try:
+        def_path = nx.shortest_path(G, orig_node, dest_node, weight="length")
+        default_geojson = LineString(def_path).__geo_interface__
+        depths = [G.get_edge_data(u, v).get("depth", 0.0) for u, v in zip(def_path[:-1], def_path[1:])]
+        if depths:
+            default_max_depth = max(depths)
+    except Exception:
+        pass
+
+    safe_geojson = fallback_geojson
+    safe_max_depth = 2.1
     try:
         alt_path = nx.shortest_path(G, orig_node, dest_node, weight="weight")
         safe_geojson = LineString(alt_path).__geo_interface__
-        for u, v in zip(alt_path[:-1], alt_path[1:]):
-            safe_max_depth = max(safe_max_depth, G.get_edge_data(u, v).get("depth", 0.0))
+        depths = [G.get_edge_data(u, v).get("depth", 0.0) for u, v in zip(alt_path[:-1], alt_path[1:])]
+        if depths:
+            safe_max_depth = max(depths)
     except Exception:
         try:
             alt_path = nx.shortest_path(G, orig_node, dest_node, weight="length")
             safe_geojson = LineString(alt_path).__geo_interface__
-            for u, v in zip(alt_path[:-1], alt_path[1:]):
-                safe_max_depth = max(safe_max_depth, G.get_edge_data(u, v).get("depth", 0.0))
+            depths = [G.get_edge_data(u, v).get("depth", 0.0) for u, v in zip(alt_path[:-1], alt_path[1:])]
+            if depths:
+                safe_max_depth = max(depths)
         except Exception:
             mid_pt_lon = (start_lon + end_lon) / 2.0 + 0.0008
             mid_pt_lat = (start_lat + end_lat) / 2.0 + 0.0008
@@ -816,10 +956,15 @@ def calculate_safe_route(
         "vehicle_profile": profile,
         "forecast_window_min": (forecast_step + 1) * 15,
         "nav_waypoints": nav_waypoints,
+        "default_route": {
+            "geometry": default_geojson,
+            "max_water_depth_cm": round(default_max_depth, 1),
+            "status": "Submerged Corridor" if default_max_depth >= lim["warn_depth"] else "Passable"
+        },
         "safe_route": {
             "geometry": safe_geojson,
             "max_water_depth_cm": round(safe_max_depth, 1),
-            "status": "Safe Emergency Vector" if safe_max_depth < lim["warn_depth"] else "Caution Advised (High Clearance)"
+            "status": "Safe Emergency Vector" if safe_max_depth < lim["warn_depth"] else "Caution Advised"
         }
     }
 

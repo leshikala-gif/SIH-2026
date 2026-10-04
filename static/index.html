@@ -149,7 +149,6 @@
       border-bottom-width: 2px;
     }
 
-    /* Single Unified Auth Button */
     .single-auth-btn {
       background: #1e293b;
       color: #38bdf8;
@@ -312,7 +311,6 @@
       font-weight: 600;
     }
 
-    /* Viewport-Pinned Legend */
     .map-legend {
       position: absolute;
       bottom: 16px;
@@ -371,39 +369,104 @@
     .legend-depth { color: var(--text-muted); font-size: 10px; }
 
     .routing-status-card {
-      position: absolute;
-      top: 60px;
-      left: 16px;
-      z-index: 1000;
-      background: rgba(20, 24, 32, 0.96);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 14px;
-      font-size: 12px;
-      display: none;
-      width: 330px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    }
-    .routing-status-card b { color: var(--text-main); }
-    .instruction-step {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border-subtle);
-      font-size: 11.5px;
-      color: var(--text-main);
-    }
-    .instruction-diversion {
-      background: rgba(180, 125, 40, 0.12);
-      border-left: 2px solid var(--accent-warm);
-      padding: 4px 8px;
-      margin-top: 4px;
-      color: #eab308;
-      border-radius: 0 3px 3px 0;
+      display: none !important;
     }
 
     /* ============================================================ */
-    /* PROCEDURAL MAP-ENGULFING MIST TRANSITION                     */
+    /* POST-IT NOTE HYDROLOGY BRIEF MODAL (CLEAN HEADER, NO CLIP)   */
     /* ============================================================ */
+    .postit-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999999;
+      background: rgba(10, 25, 55, 0.78);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      animation: fadeInPostIt 0.28s ease;
+    }
+
+    @keyframes fadeInPostIt {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .postit-wrapper {
+      position: relative;
+      width: 660px;
+      max-width: 95vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 20px;
+    }
+
+    /* Wooden Clip Pinning the Post-It Note */
+    .postit-wooden-clothespin {
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 38px;
+      background: linear-gradient(90deg, #9a3412, #ea580c, #9a3412);
+      border-radius: 3px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+      z-index: 10;
+    }
+    .postit-wooden-clothespin::after {
+      content: '';
+      position: absolute;
+      top: 14px; left: 2px; right: 2px;
+      height: 2px; background: #431407;
+    }
+
+    /* Authentic Post-It Note Card */
+    .postit-note-card {
+      position: relative;
+      width: 100%;
+      background: linear-gradient(180deg, #fffef0 0%, #fefce8 100%);
+      border: 1px solid #fef08a;
+      border-radius: 4px 4px 18px 4px;
+      padding: 28px 30px 22px 30px;
+      color: #0f172a;
+      box-shadow: 
+        0 18px 40px -10px rgba(0, 0, 0, 0.45),
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      animation: popPostIt 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .postit-note-card::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      right: 6px;
+      width: 45px;
+      height: 20px;
+      background: rgba(0, 0, 0, 0.08);
+      transform: rotate(4deg);
+      filter: blur(4px);
+      z-index: -1;
+    }
+
+    @keyframes popPostIt {
+      0% { transform: scale(0.92) translateY(12px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .postit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid #fef08a;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    /* Modal Styling */
     .auth-modal-overlay {
       position: fixed;
       inset: 0;
@@ -505,7 +568,6 @@
       100% { opacity: 0.85; transform: scale(1.05); }
     }
 
-    /* Modal Canvas Container (Seamless borderless finish) */
     .poster-container {
       width: 800px;
       height: 570px;
@@ -534,7 +596,6 @@
       opacity: 1;
     }
 
-    /* Graphic Orange Field */
     .orange-canvas {
       flex: 1;
       width: 100%;
@@ -553,7 +614,6 @@
       border-radius: 12px;
     }
 
-    /* Windshield Roof Cutout */
     .roof-wedge {
       position: absolute;
       top: 0;
@@ -565,7 +625,6 @@
       z-index: 2;
     }
 
-    /* Close Button */
     .modal-dismiss-btn {
       position: absolute;
       top: 14px;
@@ -590,7 +649,6 @@
       border-color: #ffffff;
     }
 
-    /* Mirror Mount Stem Arm */
     .mirror-mount-arm {
       position: absolute;
       top: 75px;
@@ -603,13 +661,12 @@
       z-index: 3;
     }
 
-    /* REAR-VIEW MIRROR CASING */
     .rearview-mirror-container {
       position: relative;
       margin-top: 35px;
       width: 740px;
       max-width: 96%;
-      height: 340px;
+      height: 350px;
       background: #09090b;
       border-radius: 52px 58px 72px 66px / 42px 48px 60px 54px;
       padding: 5px;
@@ -621,7 +678,6 @@
       overflow: hidden;
     }
 
-    /* Mirror Day/Night Flip Tab */
     .mirror-flip-tab {
       position: absolute;
       bottom: -16px;
@@ -635,7 +691,6 @@
       z-index: 3;
     }
 
-    /* Reflective Glass Area */
     .mirror-reflective-surface {
       width: 100%;
       height: 100%;
@@ -648,7 +703,6 @@
       flex-direction: column;
     }
 
-    /* SVG Reflection Scene */
     .mirror-landscape-bg {
       position: absolute;
       inset: 0;
@@ -658,7 +712,6 @@
       pointer-events: none;
     }
 
-    /* Glass Darkening Overlay */
     .mirror-glass-frost {
       position: absolute;
       inset: 0;
@@ -666,26 +719,24 @@
       z-index: 2;
     }
 
-    /* Content Box inside Mirror */
     .mirror-content-box {
       position: relative;
       z-index: 3;
       width: 100%;
       height: 100%;
-      padding: 20px 32px;
+      padding: 16px 28px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 16px;
+      gap: 12px;
     }
 
-    /* Mirror Header Bar */
     .mirror-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-      padding-bottom: 10px;
+      padding-bottom: 8px;
     }
 
     .brand-mark {
@@ -718,7 +769,6 @@
       color: #f8fafc;
     }
 
-    /* Mode Selector Tabs (Sign In vs Register) */
     .mirror-mode-tabs {
       display: flex;
       background: rgba(0, 0, 0, 0.5);
@@ -745,7 +795,6 @@
       box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
     }
 
-    /* Two-Column Form Layout */
     .mirror-form-grid {
       display: grid;
       grid-template-columns: 1.15fr 1fr;
@@ -756,13 +805,13 @@
     .field-column {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .input-box {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .field-label {
@@ -776,7 +825,7 @@
 
     .text-input {
       width: 100%;
-      height: 38px;
+      height: 36px;
       background: rgba(6, 11, 22, 0.85);
       border: 1px solid rgba(56, 189, 248, 0.32);
       border-radius: 4px;
@@ -793,13 +842,12 @@
       box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
     }
 
-    /* License Plate Formatted Box */
     .plate-input-wrapper {
       display: flex;
       background: #ffffff;
       border: 1.5px solid #000;
       border-radius: 4px;
-      height: 38px;
+      height: 36px;
       overflow: hidden;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
@@ -828,11 +876,10 @@
       background: transparent;
     }
 
-    /* Actions Column */
     .action-column {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .form-options-row {
@@ -855,7 +902,6 @@
       cursor: pointer;
     }
 
-    /* Resend OTP Button with countdown styling */
     .resend-otp-btn {
       background: none;
       border: none;
@@ -879,7 +925,7 @@
     }
 
     .mirror-submit-btn {
-      height: 40px;
+      height: 38px;
       width: 100%;
       background: #e55e14;
       color: #ffffff;
@@ -938,17 +984,17 @@
       height: 100%;
       flex-direction: column;
       justify-content: space-between;
-      padding: 4px 0;
+      padding: 2px 0;
     }
 
     .telemetry-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      gap: 8px;
       background: rgba(0, 0, 0, 0.6);
       border: 1px solid rgba(56, 189, 248, 0.28);
       border-radius: 5px;
-      padding: 10px 14px;
+      padding: 8px 12px;
     }
     .telemetry-item {
       display: flex;
@@ -962,7 +1008,7 @@
       text-transform: uppercase;
     }
     .t-val {
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 800;
       color: #ffffff;
       white-space: nowrap;
@@ -973,27 +1019,29 @@
     .inbox-alert-strip {
       background: rgba(2, 6, 23, 0.8);
       border-left: 3px solid #ef4444;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-radius: 0 4px 4px 0;
-      font-size: 11.5px;
+      font-size: 11px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 10px 0;
+      margin: 4px 0;
     }
 
-    .dashboard-actions-row {
-      display: flex;
-      gap: 8px;
+    .dashboard-actions-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr 70px;
+      gap: 6px;
+      align-items: center;
     }
+
     .btn-sim-alert {
-      flex: 1.1;
-      height: 38px;
-      background: rgba(225, 29, 72, 0.35);
+      height: 36px;
+      background: rgba(225, 29, 72, 0.28);
       border: 1px solid #f43f5e;
       color: #fff;
-      font-size: 11px;
-      font-weight: 800;
+      font-size: 10.5px;
+      font-weight: 700;
       border-radius: 4px;
       cursor: pointer;
       transition: background 0.15s;
@@ -1001,33 +1049,72 @@
     .btn-sim-alert:hover {
       background: #e11d48;
     }
+
     .btn-gmaps-nav {
-      flex: 1.3;
-      height: 38px;
+      height: 36px;
       background: #2563eb;
       border: 1px solid #60a5fa;
       color: #fff;
-      font-size: 11px;
+      font-size: 10.5px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .btn-gmaps-nav:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-call-rescue {
+      height: 36px;
+      background: #b91c1c;
+      border: 1px solid #f87171;
+      color: #fff;
+      font-size: 10.5px;
       font-weight: 800;
       border-radius: 4px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      transition: background 0.15s, box-shadow 0.15s;
+      gap: 4px;
+      transition: background 0.15s;
     }
-    .btn-gmaps-nav:hover {
-      background: #1d4ed8;
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+    .btn-call-rescue:hover {
+      background: #dc2626;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
     }
+
+    .btn-wa-sos {
+      height: 36px;
+      background: #059669;
+      border: 1px solid #34d399;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .btn-wa-sos:hover {
+      background: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
     .btn-logout {
-      width: 76px;
-      height: 38px;
+      height: 36px;
       background: rgba(0, 0, 0, 0.65);
       border: 1px solid rgba(255, 255, 255, 0.25);
       color: #cbd5e1;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       border-radius: 4px;
       cursor: pointer;
@@ -1142,7 +1229,7 @@
 
       <!-- Unified Sign In / Sign Up Trigger -->
       <div id="authNavControls">
-        <button type="button" class="single-auth-btn" onclick="openAuthModal()">
+        <button type="button" id="authNavTriggerBtn" class="single-auth-btn" onclick="window.openAuthModal()">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           <span>Sign In / Sign Up</span>
         </button>
@@ -1150,7 +1237,7 @@
 
       <!-- Logged In User Pill -->
       <div id="userProfileNavPill" style="display: none;">
-        <div class="user-profile-badge" onclick="openAuthModal()">
+        <div class="user-profile-badge" onclick="window.openAuthModal()">
           <span>👤</span>
           <span id="navVehiclePlate">DL01AM0911</span>
           <span style="font-size: 10px; background:#0284c7; padding: 1px 5px; border-radius: 3px;">Alerts On</span>
@@ -1184,12 +1271,6 @@
         <div class="map-header">
           <h3 id="mapLocationTitle">Connaught Place, Delhi — Street runoff & safe routing (3D Vector View)</h3>
           <div class="controls-row">
-            
-            <!-- Quick Safest Route Selector Button -->
-            <button type="button" class="btn-cta-enterprise px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" onclick="enableMapRoutePicking()">
-              <span>🧭 Choose Safest Path</span>
-            </button>
-
             <select id="quickCitySelect" class="scenario-dropdown" onchange="jumpToPreset(this.value)">
               <option value="28.6315,77.2167,Connaught Place Delhi" selected>CP, New Delhi</option>
               <option value="28.5450,77.1926,IIT Delhi">IIT Delhi</option>
@@ -1217,6 +1298,12 @@
 
             <input type="text" id="locationSearchInput" class="search-input" placeholder="Search location..." onkeydown="handleSearchKey(event)" />
 
+            <!-- Incident Hydrology Brief Button matching other controls in color -->
+            <button type="button" onclick="window.generateTacticalRescueReport()" 
+                    class="scenario-dropdown cursor-pointer hover:border-[#3b82f6] transition-colors font-medium">
+              Incident Hydrology Brief
+            </button>
+
             <span class="route-hint">Click 2 points to route</span>
           </div>
         </div>
@@ -1230,15 +1317,12 @@
           </div>
           <div><b>Default route:</b> <span id="defaultRouteStat">-</span></div>
           <div style="margin-top:4px;"><b>JalMarg safe route:</b> <span id="safeRouteStat">-</span></div>
-          
           <div id="navActionContainer" style="margin-top: 10px; display: none;">
             <a id="gmapsNavBtn" href="#" target="_blank" rel="noopener noreferrer" 
                class="flex items-center justify-center gap-2 w-full py-2.5 px-3 text-xs font-bold rounded text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors shadow-sm text-center">
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-              <span>🚀 Start Turn-by-Turn GPS in Google Maps</span>
+              <span>Start Turn-by-Turn GPS in Google Maps</span>
             </a>
           </div>
-
           <div id="instructionPanel" style="margin-top: 10px; max-height: 160px; overflow-y: auto;"></div>
         </div>
 
@@ -1358,12 +1442,44 @@
     </div>
   </main>
 
-  <!-- ============================================================ -->
-  <!-- REAR-VIEW MIRROR CITIZEN PORTAL (ATMOSPHERIC MIST SEQUENCE) -->
-  <!-- ============================================================ -->
+  <!-- POST-IT NOTE HYDROLOGICAL BRIEF MODAL (CLEAN HEADER, NO SITREP) -->
+  <div id="tacticalReportModal" class="postit-modal-overlay">
+    <div class="postit-wrapper">
+      <div class="postit-wooden-clothespin" title="JalMarg Telemetry Clip"></div>
+
+      <div class="postit-note-card">
+        
+        <!-- Header (SITREP Removed) -->
+        <div class="postit-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <b style="font-size:14px; letter-spacing:0.5px; color:#0f172a; font-family:'Space Grotesk', sans-serif;">INCIDENT HYDROLOGY BRIEF</b>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:11px; font-family:'JetBrains Mono', monospace; color:#64748b; font-weight:600;">JalMarg AI</span>
+            <button onclick="document.getElementById('tacticalReportModal').style.display='none'" 
+                    style="background:none; border:none; color:#64748b; font-size:16px; font-weight:bold; cursor:pointer; line-height:1;" title="Close">✕</button>
+          </div>
+        </div>
+
+        <!-- Telemetry Breakdown (Preserves Original Structure & Text) -->
+        <div id="tacticalReportContent" style="font-size:12px; display:flex; flex-direction:column; gap:10px; color:#1e293b;">
+          <!-- Dynamically populated via generateTacticalRescueReport() -->
+        </div>
+
+        <!-- Footer Actions -->
+        <div style="display:flex; justify-content:flex-end; align-items:center; border-top:1px solid #fef08a; padding-top:10px; margin-top:14px;">
+          <button onclick="window.print()" class="px-3.5 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded transition-colors shadow-sm cursor-pointer">
+            Print / Save PDF Brief
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- REAR-VIEW MIRROR CITIZEN PORTAL -->
   <div id="authModalOverlay" class="auth-modal-overlay">
     
-    <!-- Fullscreen Vapor/Mist Curtain rolling over the map -->
     <div class="mist-curtain">
       <div class="mist-layer mist-layer-1"></div>
       <div class="mist-layer mist-layer-2"></div>
@@ -1372,29 +1488,15 @@
     </div>
 
     <div class="poster-container">
-      
-      <!-- Graphic Orange Field -->
       <div class="orange-canvas">
-        
-        <!-- Dismiss Modal Button -->
-        <button type="button" class="modal-dismiss-btn" onclick="closeAuthModal()" title="Close Portal">&times;</button>
-
-        <!-- Windshield Roof Silhouette -->
+        <button type="button" class="modal-dismiss-btn" onclick="window.closeAuthModal()" title="Close Portal">&times;</button>
         <div class="roof-wedge"></div>
-
-        <!-- Mirror Mount Stem Arm -->
         <div class="mirror-mount-arm"></div>
 
-        <!-- Central Rear-View Mirror Chassis -->
         <div class="rearview-mirror-container">
-          
-          <!-- Anti-Glare Flip Tab -->
           <div class="mirror-flip-tab"></div>
-
-          <!-- Glass Interior Surface (Seamless borderless finish kissing the bezel) -->
           <div class="mirror-reflective-surface">
 
-            <!-- SVG Perspective Horizon, Water & Highway -->
             <svg class="mirror-landscape-bg" viewBox="0 0 650 250" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="skyWash" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1402,17 +1504,14 @@
                   <stop offset="50%" stop-color="#b4c3d4" />
                   <stop offset="100%" stop-color="#d3dee8" />
                 </linearGradient>
-
                 <linearGradient id="hillsWash" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stop-color="#4a5c73" />
                   <stop offset="100%" stop-color="#243144" />
                 </linearGradient>
-
                 <linearGradient id="floodWash" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stop-color="#1c2d46" />
                   <stop offset="100%" stop-color="#0f1929" />
                 </linearGradient>
-
                 <linearGradient id="roadWash" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stop-color="#697a8e" />
                   <stop offset="100%" stop-color="#495768" />
@@ -1420,19 +1519,11 @@
               </defs>
 
               <rect x="0" y="0" width="650" height="250" fill="url(#skyWash)" />
-
-              <!-- Distant Ridge -->
               <path d="M 0 118 Q 70 106 140 114 Q 210 104 275 116 L 275 119 L 0 119 Z" fill="url(#hillsWash)" />
               <path d="M 375 119 Q 420 106 490 112 Q 570 103 650 115 L 650 119 L 375 119 Z" fill="url(#hillsWash)" />
-
-              <!-- Inundated Shorelines -->
               <polygon points="0,119 275,119 155,250 0,250" fill="url(#floodWash)" />
               <polygon points="375,119 650,119 650,250 495,250" fill="url(#floodWash)" />
-
-              <!-- Vanishing Highway -->
               <polygon points="275,119 375,119 495,250 155,250" fill="url(#roadWash)" />
-
-              <!-- Dashed Highway Centerline -->
               <polygon points="324,119 326,119 327,129 323,129" fill="#e55e14" />
               <polygon points="323,134 327,134 329,150 321,150" fill="#e55e14" />
               <polygon points="321,157 329,157 332,180 318,180" fill="#e55e14" />
@@ -1440,13 +1531,9 @@
               <polygon points="312,231 338,231 343,250 307,250" fill="#e55e14" />
             </svg>
 
-            <!-- Contrast Darkening Overlay Layer (Sharp Edge Cutoff, No Bleed) -->
             <div class="mirror-glass-frost"></div>
 
-            <!-- Dialogue Content Inside the Mirror -->
             <div class="mirror-content-box">
-              
-              <!-- Header with Water Droplet Logo and Mode Segmented Selector -->
               <div class="mirror-header">
                 <div class="brand-mark">
                   <div class="brand-logo-icon">
@@ -1457,19 +1544,18 @@
                   <div class="brand-name">JalMarg</div>
                 </div>
 
-                <!-- Mode Selector Tabs -->
                 <div id="mirrorModeTabsWrap" class="mirror-mode-tabs">
-                  <button type="button" id="tabBtnSignIn" class="mirror-tab-btn active" onclick="setMirrorMode('signin')">
+                  <button type="button" id="tabBtnSignIn" class="mirror-tab-btn active" onclick="window.setMirrorMode('signin')">
                     Sign In
                   </button>
-                  <button type="button" id="tabBtnSignUp" class="mirror-tab-btn" onclick="setMirrorMode('signup')">
+                  <button type="button" id="tabBtnSignUp" class="mirror-tab-btn" onclick="window.setMirrorMode('signup')">
                     Register Vehicle
                   </button>
                 </div>
               </div>
 
-              <!-- VIEW 1: SIGN IN (Existing Users) -->
-              <form id="viewSignInForm" class="mirror-form-grid" onsubmit="event.preventDefault(); handleMirrorSignIn();">
+              <!-- VIEW 1: SIGN IN -->
+              <form id="viewSignInForm" class="mirror-form-grid" onsubmit="event.preventDefault(); window.handleMirrorSignIn();">
                 <div class="field-column">
                   <div class="input-box">
                     <label class="field-label">Vehicle Registration No. (RTO) / Mobile</label>
@@ -1491,7 +1577,7 @@
                       <input type="checkbox" id="rememberMeCheck" checked />
                       <span>Remember vehicle</span>
                     </label>
-                    <button type="button" id="resendOtpBtn" class="resend-otp-btn" onclick="handleResendOtp()">
+                    <button type="button" id="resendOtpBtn" class="resend-otp-btn" onclick="window.handleResendOtp()">
                       Resend OTP (60s)
                     </button>
                   </div>
@@ -1505,14 +1591,14 @@
 
                   <div class="demo-chip-bar">
                     <span class="demo-tag">Quick Fill:</span>
-                    <button type="button" class="chip-btn" onclick="fillVehicleSignIn('DL01AM0911')">Delhi (450mm)</button>
-                    <button type="button" class="chip-btn" onclick="fillVehicleSignIn('MP04TA5510')">Bhopal (350mm)</button>
+                    <button type="button" class="chip-btn" onclick="window.fillVehicleSignIn('DL01AM0911')">Delhi (450mm)</button>
+                    <button type="button" class="chip-btn" onclick="window.fillVehicleSignIn('MP04TA5510')">Bhopal (350mm)</button>
                   </div>
                 </div>
               </form>
 
-              <!-- VIEW 2: SIGN UP (New Users / Register Vehicle) -->
-              <form id="viewSignUpForm" class="mirror-form-grid" style="display: none;" onsubmit="event.preventDefault(); handleMirrorSignUp();">
+              <!-- VIEW 2: SIGN UP -->
+              <form id="viewSignUpForm" class="mirror-form-grid" style="display: none;" onsubmit="event.preventDefault(); window.handleMirrorSignUp();">
                 <div class="field-column">
                   <div class="input-box">
                     <label class="field-label">Vehicle Registration Number (VAHAN 4.0)</label>
@@ -1543,13 +1629,13 @@
 
                   <div class="demo-chip-bar">
                     <span class="demo-tag">Presets:</span>
-                    <button type="button" class="chip-btn" onclick="fillVehicleSignUp('DL02AB4321', 'Riya')">Delhi (300mm)</button>
-                    <button type="button" class="chip-btn" onclick="fillVehicleSignUp('RJ14CD7890', 'Aman')">Jaipur (200mm)</button>
+                    <button type="button" class="chip-btn" onclick="window.fillVehicleSignUp('DL02AB4321', 'Riya')">Delhi (300mm)</button>
+                    <button type="button" class="chip-btn" onclick="window.fillVehicleSignUp('RJ14CD7890', 'Aman')">Jaipur (200mm)</button>
                   </div>
                 </div>
               </form>
 
-              <!-- VIEW 3: AUTHENTICATED DRIVER HUD (Displayed after login) -->
+              <!-- VIEW 3: AUTHENTICATED DRIVER HUD -->
               <div id="mirrorDashboardView" class="mirror-dashboard-view">
                 <div class="telemetry-strip">
                   <div class="telemetry-item">
@@ -1575,15 +1661,20 @@
                   <span style="font-family:'JetBrains Mono', monospace; font-size:9.5px; color:#94a3b8; white-space:nowrap; margin-left:8px;">Live</span>
                 </div>
 
-                <div class="dashboard-actions-row">
-                  <button type="button" class="btn-sim-alert" onclick="simulateMirrorAlert()">
-                    ⚡ Simulate Cloudburst Alert
+                <div class="dashboard-actions-grid">
+                  <button type="button" class="btn-sim-alert" onclick="window.simulateMirrorAlert()" title="Simulate rainfall spike">
+                    ⚡ Simulate
                   </button>
-                  <!-- Safest GPS Path Trigger inside the Mirror -->
-                  <button type="button" class="btn-gmaps-nav" onclick="launchSafeRouteGmaps()">
-                    🧭 Navigate Safest Route (Google Maps GPS)
+                  <button type="button" class="btn-gmaps-nav" onclick="window.launchSafeRouteGmaps()" title="Start Turn-by-Turn Safe GPS">
+                    🧭 Safe Route
                   </button>
-                  <button type="button" class="btn-logout" onclick="handleMirrorLogout()">Sign Out</button>
+                  <button type="button" class="btn-call-rescue" onclick="window.callEmergencyHelpline()" title="Instant Emergency Dial 112/1077">
+                    🚨 Call 112
+                  </button>
+                  <button type="button" class="btn-wa-sos" onclick="window.sendWhatsappSosDirect()" title="Send WhatsApp Message with Live GPS Pin">
+                    💬 WA SOS
+                  </button>
+                  <button type="button" class="btn-logout" onclick="window.handleMirrorLogout()">Sign Out</button>
                 </div>
               </div>
 
@@ -1598,6 +1689,330 @@
   </div>
 
   <script>
+    /* ============================================================ */
+    /* GLOBAL AUTH & MODAL CONTROLLERS                              */
+    /* ============================================================ */
+    let currentAuthUser = null;
+    let liveWatchId = null;
+    let otpTimerSeconds = 60;
+    let otpTimerInterval = null;
+
+    window.openAuthModal = function() {
+      const modal = document.getElementById("authModalOverlay");
+      if (!modal) return;
+      modal.classList.add("active");
+      if (currentAuthUser) {
+        window.showMirrorDashboard();
+      } else {
+        window.setMirrorMode("signin");
+        window.startResendOtpTimer();
+      }
+    };
+
+    window.closeAuthModal = function() {
+      const modal = document.getElementById("authModalOverlay");
+      if (!modal) return;
+      modal.classList.remove("active");
+      if (otpTimerInterval) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+      }
+    };
+
+    window.setMirrorMode = function(mode) {
+      const viewIn = document.getElementById("viewSignInForm");
+      const viewUp = document.getElementById("viewSignUpForm");
+      const viewDash = document.getElementById("mirrorDashboardView");
+      const tabsWrap = document.getElementById("mirrorModeTabsWrap");
+
+      const btnIn = document.getElementById("tabBtnSignIn");
+      const btnUp = document.getElementById("tabBtnSignUp");
+
+      if (tabsWrap) tabsWrap.style.display = "flex";
+      if (viewDash) viewDash.style.display = "none";
+
+      if (mode === "signin") {
+        if (viewIn) viewIn.style.display = "grid";
+        if (viewUp) viewUp.style.display = "none";
+        if (btnIn) btnIn.classList.add("active");
+        if (btnUp) btnUp.classList.remove("active");
+        window.startResendOtpTimer();
+      } else {
+        if (viewIn) viewIn.style.display = "none";
+        if (viewUp) viewUp.style.display = "grid";
+        if (btnUp) btnUp.classList.add("active");
+        if (btnIn) btnIn.classList.remove("active");
+        if (otpTimerInterval) {
+          clearInterval(otpTimerInterval);
+          otpTimerInterval = null;
+        }
+      }
+    };
+
+    window.startResendOtpTimer = function() {
+      otpTimerSeconds = 60;
+      const btn = document.getElementById("resendOtpBtn");
+      if (!btn) return;
+      btn.disabled = true;
+      btn.innerText = `Resend OTP (${otpTimerSeconds}s)`;
+
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+
+      otpTimerInterval = setInterval(() => {
+        otpTimerSeconds--;
+        if (otpTimerSeconds <= 0) {
+          clearInterval(otpTimerInterval);
+          otpTimerInterval = null;
+          btn.disabled = false;
+          btn.innerText = "Resend OTP";
+        } else {
+          btn.innerText = `Resend OTP (${otpTimerSeconds}s)`;
+        }
+      }, 1000);
+    };
+
+    window.handleResendOtp = function() {
+      if (otpTimerSeconds > 0) return;
+      const otpInput = document.getElementById("signInOtpInput");
+      if (otpInput) {
+        otpInput.value = "";
+        otpInput.focus();
+      }
+      alert("New OTP dispatched to registered VAHAN mobile no.");
+      window.startResendOtpTimer();
+    };
+
+    window.fillVehicleSignIn = function(plate) {
+      const el = document.getElementById("signInIdentifierInput");
+      if (el) el.value = plate;
+    };
+
+    window.fillVehicleSignUp = function(plate, name) {
+      const pEl = document.getElementById("signUpPlateInput");
+      const nEl = document.getElementById("signUpNameInput");
+      if (pEl) pEl.value = plate;
+      if (nEl && name) nEl.value = name;
+    };
+
+    window.handleMirrorSignIn = async function() {
+      const identifier = document.getElementById("signInIdentifierInput").value.trim();
+      const otp = document.getElementById("signInOtpInput").value.trim();
+      const btn = document.getElementById("signInSubmitBtn");
+
+      if (!identifier) {
+        alert("Please enter a vehicle registration number or mobile.");
+        return;
+      }
+
+      if (!otp) {
+        alert("Please enter the verification OTP.");
+        document.getElementById("signInOtpInput").focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Verifying...</span>`;
+
+      try {
+        const res = await fetch("/api/auth/signin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier, otp })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          currentAuthUser = data.user;
+          window.updateNavbarAuth();
+          syncLocationToUser(currentAuthUser.vehicle_number);
+          startLiveTelemetryTracking(currentAuthUser.vehicle_number);
+          window.showMirrorDashboard();
+        } else {
+          window.fallbackMockAuth(identifier);
+        }
+      } catch (err) {
+        window.fallbackMockAuth(identifier);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <span>Sign In</span>
+          <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+          </svg>
+        `;
+      }
+    };
+
+    window.handleMirrorSignUp = async function() {
+      const plate = document.getElementById("signUpPlateInput").value.trim();
+      const name = document.getElementById("signUpNameInput").value.trim();
+      const phone = document.getElementById("signUpPhoneInput").value.trim();
+      const btn = document.getElementById("signUpSubmitBtn");
+
+      if (!plate) {
+        alert("Please enter a vehicle registration plate number.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Registering...</span>`;
+
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vehicle_number: plate, full_name: name, phone: phone })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          currentAuthUser = data.user;
+          window.updateNavbarAuth();
+          syncLocationToUser(currentAuthUser.vehicle_number);
+          startLiveTelemetryTracking(currentAuthUser.vehicle_number);
+          window.showMirrorDashboard();
+        } else {
+          window.fallbackMockAuth(plate, name, phone);
+        }
+      } catch (err) {
+        window.fallbackMockAuth(plate, name, phone);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <span>Register &amp; Activate Alerts</span>
+          <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+          </svg>
+        `;
+      }
+    };
+
+    window.fallbackMockAuth = function(identifier, name = "Registered Driver", phone = "+91 98201 44821") {
+      const isScorpio = identifier.includes("04") || identifier.toLowerCase().includes("scorpio");
+      const isNexon = identifier.includes("02") || identifier.toLowerCase().includes("nexon");
+      const isAmbulance = identifier.includes("AM") || identifier.includes("0911") || identifier.toLowerCase().includes("ambulance");
+      const depthMm = isAmbulance ? 450 : isScorpio ? 350 : isNexon ? 300 : 200;
+
+      currentAuthUser = {
+        full_name: name,
+        model: isAmbulance ? "Force Traveller (Ambulance)" : isScorpio ? "Mahindra Scorpio" : isNexon ? "Tata Nexon" : "Standard Hatchback",
+        wading_depth_cm: depthMm / 10.0,
+        wading_depth_mm: depthMm,
+        phone: phone,
+        vehicle_number: identifier
+      };
+      window.updateNavbarAuth();
+      syncLocationToUser(currentAuthUser.vehicle_number);
+      startLiveTelemetryTracking(currentAuthUser.vehicle_number);
+      window.showMirrorDashboard();
+    };
+
+    window.showMirrorDashboard = function() {
+      const modeTabs = document.getElementById("mirrorModeTabsWrap");
+      const viewIn = document.getElementById("viewSignInForm");
+      const viewUp = document.getElementById("viewSignUpForm");
+      const dash = document.getElementById("mirrorDashboardView");
+
+      if (modeTabs) modeTabs.style.display = "none";
+      if (viewIn) viewIn.style.display = "none";
+      if (viewUp) viewUp.style.display = "none";
+      if (dash) dash.style.display = "flex";
+
+      const depthMm = currentAuthUser.wading_depth_mm || (currentAuthUser.wading_depth_cm ? Math.round(currentAuthUser.wading_depth_cm * 10) : 200);
+      const locCtx = resolveUserCityContext(currentAuthUser.vehicle_number);
+
+      const tOwner = document.getElementById("tOwner");
+      const tModel = document.getElementById("tModel");
+      const tClear = document.getElementById("tClearance");
+      const tPhone = document.getElementById("tPhone");
+
+      if (tOwner) tOwner.innerText = currentAuthUser.full_name || "Registered Driver";
+      if (tModel) tModel.innerText = currentAuthUser.model || currentAuthUser.vehicle_number;
+      if (tClear) tClear.innerText = `${depthMm} mm`;
+      if (tPhone) tPhone.innerText = currentAuthUser.phone;
+
+      const inboxMsg = document.getElementById("hudInboxMsg");
+      const inboxStrip = document.getElementById("hudInboxStrip");
+      if (inboxMsg) inboxMsg.innerText = `🛡 Live telemetry active in ${locCtx.name}. Monitoring corridors for depth >${depthMm} mm.`;
+      if (inboxStrip) inboxStrip.style.borderLeftColor = "#22c55e";
+    };
+
+    window.simulateMirrorAlert = async function() {
+      if (!currentAuthUser) return;
+      
+      const locCtx = resolveUserCityContext(currentAuthUser.vehicle_number);
+      const depthMm = currentAuthUser.wading_depth_mm || Math.round((currentAuthUser.wading_depth_cm || 20.0) * 10);
+      
+      let targetCorridor = locCtx.corridor;
+      let targetDepthMm = 285;
+
+      if (simulationData && simulationData.features && simulationData.features.length > 0) {
+        const activeStep = parseInt(document.getElementById('timeSlider').value) || 2;
+        const roads = simulationData.features
+          .filter(f => f.properties && f.properties.name && !f.properties.name.includes("Corridor") && !f.properties.name.includes("Link") && !f.properties.name.includes("Avenue"))
+          .sort((a, b) => ((b.properties.depth_timeline_cm || [0])[activeStep] || 0) - ((a.properties.depth_timeline_cm || [0])[activeStep] || 0));
+
+        if (roads.length > 0 && roads[0].properties.name) {
+          targetCorridor = roads[0].properties.name;
+          const roadDepth = (roads[0].properties.depth_timeline_cm || [0])[activeStep] || 0;
+          if (roadDepth > 5) targetDepthMm = Math.round(roadDepth * 10);
+        }
+      }
+
+      const isHazard = targetDepthMm >= depthMm;
+      const alertText = isHazard
+        ? `⚠️ Peak ponding at ${targetCorridor} is ${targetDepthMm} mm (Exceeds ${depthMm} mm limit). Divert to ${locCtx.detour}!`
+        : `ℹ️ ${targetCorridor} has ${targetDepthMm} mm standing water. Passable for your ${currentAuthUser.model} (Limit: ${depthMm} mm).`;
+
+      const msg = document.getElementById("hudInboxMsg");
+      const strip = document.getElementById("hudInboxStrip");
+      if (msg) msg.innerText = alertText;
+      if (strip) strip.style.borderLeftColor = isHazard ? "#ef4444" : "#22c55e";
+
+      try {
+        await fetch("/api/user/simulate-alert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vehicle_number: currentAuthUser.vehicle_number,
+            current_water_depth_cm: targetDepthMm / 10.0,
+            corridor_name: targetCorridor
+          })
+        });
+      } catch (err) {
+        console.warn("Alert simulation API sync warning:", err);
+      }
+    };
+
+    window.handleMirrorLogout = function() {
+      stopLiveTelemetryTracking();
+      currentAuthUser = null;
+      window.updateNavbarAuth();
+      window.setMirrorMode("signin");
+    };
+
+    window.updateNavbarAuth = function() {
+      const navControls = document.getElementById("authNavControls");
+      const navPill = document.getElementById("userProfileNavPill");
+
+      if (currentAuthUser) {
+        if (navControls) navControls.style.display = "none";
+        if (navPill) navPill.style.display = "block";
+        const plateEl = document.getElementById("navVehiclePlate");
+        if (plateEl) plateEl.innerText = `${currentAuthUser.vehicle_number} (${currentAuthUser.model.split(' ')[0]})`;
+      } else {
+        if (navControls) navControls.style.display = "block";
+        if (navPill) navPill.style.display = "none";
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const trigger = document.getElementById("authNavTriggerBtn");
+      if (trigger) {
+        trigger.addEventListener("click", window.openAuthModal);
+      }
+    });
+
     /* ============================================================ */
     /* DYNAMIC RTO & GEOLOCATION CITY PRESETS                       */
     /* ============================================================ */
@@ -1668,6 +2083,15 @@
       }
     };
 
+    const DISTRICT_RESCUE_HELPLINES = {
+      "DL": { name: "Delhi Disaster Helpline", tel: "1077", alt: "112" },
+      "MH": { name: "Maharashtra SEOC / BMC Disaster Cell", tel: "1916", alt: "112" },
+      "MP": { name: "Bhopal Flood Control", tel: "1077", alt: "112" },
+      "KA": { name: "Bengaluru Disaster Management", tel: "1077", alt: "112" },
+      "TN": { name: "Chennai Flood Control", tel: "1913", alt: "112" },
+      "RJ": { name: "Jaipur Disaster Helpline", tel: "1077", alt: "112" }
+    };
+
     function resolveUserCityContext(vehicleNumber) {
       if (vehicleNumber && vehicleNumber.length >= 2) {
         const prefix = vehicleNumber.substring(0, 2).toUpperCase();
@@ -1712,8 +2136,7 @@
       reloadSimulation();
     }
 
-    /* Safest Google Maps Path Launchers */
-    function launchSafeRouteGmaps() {
+    window.launchSafeRouteGmaps = function() {
       const locCtx = resolveUserCityContext(currentAuthUser ? currentAuthUser.vehicle_number : null);
       
       let startLat = currentLat;
@@ -1740,13 +2163,190 @@
       const url = buildGoogleMapsDeepLink({ lat: startLat, lng: startLon }, { lat: endLat, lng: endLon }, waypoints);
       window.open(url, '_blank');
 
-      closeAuthModal();
+      window.closeAuthModal();
       triggerSafeRouting({ lat: startLat, lng: startLon }, { lat: endLat, lng: endLon });
+    };
+
+    window.callEmergencyHelpline = function() {
+      if (!currentAuthUser) {
+        alert("Please sign in with your vehicle credentials first.");
+        return;
+      }
+
+      const stateCode = (currentAuthUser.vehicle_number || "").substring(0, 2).toUpperCase();
+      const helpline = DISTRICT_RESCUE_HELPLINES[stateCode] || { name: "National Emergency Service", tel: "112", alt: "1077" };
+
+      fetch("/api/user/sos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicle_number: currentAuthUser.vehicle_number,
+          driver_name: currentAuthUser.full_name || "Citizen Driver",
+          phone: currentAuthUser.phone || "",
+          lat: currentLat,
+          lon: currentLon,
+          vehicle_model: currentAuthUser.model || "Vehicle",
+          wading_depth_mm: currentAuthUser.wading_depth_mm || 200
+        })
+      }).catch(err => console.warn("SOS Telemetry sync warning:", err));
+
+      window.location.href = `tel:${helpline.tel}`;
+    };
+
+    window.sendWhatsappSosDirect = function() {
+      if (!currentAuthUser) {
+        alert("Please sign in with your vehicle credentials first.");
+        return;
+      }
+
+      const lat = currentLat.toFixed(5);
+      const lon = currentLon.toFixed(5);
+      const gmapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+      const depthMm = currentAuthUser.wading_depth_mm || (currentAuthUser.wading_depth_cm ? Math.round(currentAuthUser.wading_depth_cm * 10) : 200);
+
+      const rawSosText = 
+`EMERGENCY SOS - STRANDED IN FLOOD WATER
+• Driver: ${currentAuthUser.full_name || 'Citizen Driver'}
+• Vehicle: ${currentAuthUser.model || 'Vehicle'} (${currentAuthUser.vehicle_number || ''})
+• Phone: ${currentAuthUser.phone || ''}
+• Wading Clearance: ${depthMm} mm
+• Live GPS: ${lat}, ${lon}
+• Map Location: ${gmapsLink}`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(rawSosText).catch(() => {});
+      }
+
+      fetch("/api/user/sos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicle_number: currentAuthUser.vehicle_number,
+          driver_name: currentAuthUser.full_name || "Citizen Driver",
+          phone: currentAuthUser.phone || "",
+          lat: currentLat,
+          lon: currentLon,
+          vehicle_model: currentAuthUser.model || "Vehicle",
+          wading_depth_mm: depthMm
+        })
+      }).catch(err => console.warn("SOS Telemetry sync warning:", err));
+
+      const sosMessage = encodeURIComponent(rawSosText);
+      const isMobile = /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
+      const waUrl = isMobile
+        ? `https://api.whatsapp.com/send?phone=919711077372&text=${sosMessage}`
+        : `https://web.whatsapp.com/send?phone=919711077372&text=${sosMessage}`;
+
+      window.open(waUrl, '_blank');
+    };
+
+    /* POPULATES ORIGINAL TEXT HIERARCHY IN THE POST-IT CARD */
+    window.generateTacticalRescueReport = async function() {
+      const targetLat = (routeClickPoints.length > 0) ? routeClickPoints[0][1] : currentLat;
+      const targetLon = (routeClickPoints.length > 0) ? routeClickPoints[0][0] : currentLon;
+
+      const modal = document.getElementById("tacticalReportModal");
+      const content = document.getElementById("tacticalReportContent");
+      if (modal) modal.style.display = "flex";
+      if (content) content.innerHTML = "<div style='text-align:center; padding:25px; color:#c26928; font-weight:700;'>Computing localized runoff friction & approach vectors...</div>";
+
+      try {
+        const scenario = document.getElementById('scenarioSelector') ? document.getElementById('scenarioSelector').value : 'mosdac';
+        const res = await fetch(`/api/rescue/tactical-report?lat=${targetLat}&lon=${targetLon}&scenario=${scenario}`);
+        const r = await res.json();
+
+        const priorityBadge = r.deoc_dispatch_priority.includes("P1")
+          ? "<span style='color:#ef4444; font-weight:800;'>CRITICAL (P1)</span>"
+          : "<span style='color:#b47d28; font-weight:800;'>ELEVATED (P2)</span>";
+
+        if (content) {
+          content.innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; font-family:'JetBrains Mono', monospace;">
+              <div style="background:#ffffff; padding:10px 12px; border-radius:4px; border:1px solid #fef08a; border-left:3.5px solid #3b82f6; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">COORDINATES</div>
+                <div style="font-weight:700; color:#0f172a; font-size:12px; margin-top:2px;">${r.coordinates[0]} N, ${r.coordinates[1]} E</div>
+              </div>
+              <div style="background:#ffffff; padding:10px 12px; border-radius:4px; border:1px solid #fef08a; border-left:3.5px solid #c26928; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">CURRENT DEPTH</div>
+                <div style="font-weight:700; color:#0f172a; font-size:12px; margin-top:2px;">${r.current_ponding_cm} cm (Peak: ${r.peak_forecast_cm} cm)</div>
+              </div>
+              <div style="background:#ffffff; padding:10px 12px; border-radius:4px; border:1px solid #fef08a; border-left:3.5px solid #e11d48; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">SURGE TREND</div>
+                <div style="font-weight:700; color:#0f172a; font-size:12px; margin-top:2px;">${r.inundation_trend}</div>
+              </div>
+            </div>
+
+            <div style="background:#ffffff; padding:12px 14px; border-radius:4px; border:1px solid #fef08a; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+              <div style="font-size:10px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.4px;">RESCUE ASSET RECOMMENDATION</div>
+              <div style="font-size:13.5px; font-weight:800; color:#0f172a; margin-top:3px;">${r.deployable_asset}</div>
+              <div style="font-size:11px; color:#475569; margin-top:2px;">Dispatch Priority: ${priorityBadge}</div>
+            </div>
+
+            <div style="background:#ffffff; padding:12px 14px; border-radius:4px; border:1px solid #fef08a; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+              <div style="font-size:10px; font-weight:700; color:#16a34a; text-transform:uppercase; letter-spacing:0.4px;">SAFEST VEHICLE INGRESS CORRIDOR</div>
+              <div style="color:#0f172a; font-size:12px; margin-top:3px;"><b>Recommended Ingress Route:</b> ${r.recommended_ingress_road}</div>
+              <div style="font-size:11px; color:#475569; margin-top:1px;">Approach Corridor Depth: <b>${r.safest_approach_depth_cm} cm</b> (avoids submerged bottlenecks)</div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <div style="background:#ffffff; padding:10px 12px; border-radius:4px; border:1px solid #fef08a; color:#0f172a; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <span style="color:#64748b; font-size:10px; font-weight:700;">TERRAIN SLOPE:</span> <b>${r.slope_pct}%</b>
+              </div>
+              <div style="background:#ffffff; padding:10px 12px; border-radius:4px; border:1px solid #fef08a; color:#0f172a; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <span style="color:#64748b; font-size:10px; font-weight:700;">SUMP VOLUME:</span> <b>${r.estimated_sump_volume_m3} m³</b>
+              </div>
+            </div>
+          `;
+        }
+      } catch (err) {
+        if (content) content.innerHTML = "<div style='color:#ef4444; padding:10px;'>Error querying localized hydrological elevation raster.</div>";
+      }
+    };
+
+    function startLiveTelemetryTracking(vehicleNumber) {
+      if (!navigator.geolocation) return;
+
+      liveWatchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          const payload = {
+            vehicle_number: vehicleNumber,
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+            speed_kmh: position.coords.speed ? (position.coords.speed * 3.6) : 0,
+            heading: position.coords.heading || 0
+          };
+
+          try {
+            const res = await fetch("/api/user/live-telemetry", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.hazard_detected && data.alert) {
+              const inboxStrip = document.getElementById("hudInboxStrip");
+              const inboxMsg = document.getElementById("hudInboxMsg");
+              if (inboxStrip && inboxMsg) {
+                inboxMsg.innerText = data.alert.message;
+                inboxStrip.style.borderLeftColor = "#ef4444";
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+              }
+            }
+          } catch (err) {
+            console.error("Telemetry sync error:", err);
+          }
+        },
+        (err) => console.warn("GPS tracking warning:", err.message),
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
     }
 
-    function enableMapRoutePicking() {
-      clearRouting();
-      alert("Safe Path Selection Active:\n1. Click your origin point on the map (Green)\n2. Click your destination (Red)\nJalMarg will compute the hydrologic safe route and generate turn-by-turn Google Maps GPS.");
+    function stopLiveTelemetryTracking() {
+      if (liveWatchId !== null) {
+        navigator.geolocation.clearWatch(liveWatchId);
+        liveWatchId = null;
+      }
     }
 
     /* Atmospheric Rain Droplet Engine (Hero screen) */
@@ -2035,359 +2635,6 @@
       btn.innerText = legend.classList.contains("minimized") ? "+" : "−";
     }
 
-    /* ============================================================ */
-    /* REAR-VIEW MIRROR CITIZEN PORTAL CONTROLLER                   */
-    /* ============================================================ */
-    let currentAuthUser = null;
-    let liveWatchId = null;
-    let otpTimerSeconds = 60;
-    let otpTimerInterval = null;
-
-    function startLiveTelemetryTracking(vehicleNumber) {
-      if (!navigator.geolocation) return;
-
-      liveWatchId = navigator.geolocation.watchPosition(
-        async (position) => {
-          const payload = {
-            vehicle_number: vehicleNumber,
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-            speed_kmh: position.coords.speed ? (position.coords.speed * 3.6) : 0,
-            heading: position.coords.heading || 0
-          };
-
-          try {
-            const res = await fetch("/api/user/live-telemetry", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-
-            if (data.hazard_detected && data.alert) {
-              const inboxStrip = document.getElementById("hudInboxStrip");
-              const inboxMsg = document.getElementById("hudInboxMsg");
-              if (inboxStrip && inboxMsg) {
-                inboxMsg.innerText = data.alert.message;
-                inboxStrip.style.borderLeftColor = "#ef4444";
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-              }
-            }
-          } catch (err) {
-            console.error("Telemetry sync error:", err);
-          }
-        },
-        (err) => console.warn("GPS tracking warning:", err.message),
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-      );
-    }
-
-    function stopLiveTelemetryTracking() {
-      if (liveWatchId !== null) {
-        navigator.geolocation.clearWatch(liveWatchId);
-        liveWatchId = null;
-      }
-    }
-
-    function startResendOtpTimer() {
-      otpTimerSeconds = 60;
-      const btn = document.getElementById("resendOtpBtn");
-      if (!btn) return;
-      btn.disabled = true;
-      btn.innerText = `Resend OTP (${otpTimerSeconds}s)`;
-
-      if (otpTimerInterval) clearInterval(otpTimerInterval);
-
-      otpTimerInterval = setInterval(() => {
-        otpTimerSeconds--;
-        if (otpTimerSeconds <= 0) {
-          clearInterval(otpTimerInterval);
-          otpTimerInterval = null;
-          btn.disabled = false;
-          btn.innerText = "Resend OTP";
-        } else {
-          btn.innerText = `Resend OTP (${otpTimerSeconds}s)`;
-        }
-      }, 1000);
-    }
-
-    function handleResendOtp() {
-      if (otpTimerSeconds > 0) return;
-      const otpInput = document.getElementById("signInOtpInput");
-      if (otpInput) {
-        otpInput.value = "";
-        otpInput.focus();
-      }
-      alert("New OTP dispatched to registered VAHAN mobile no.");
-      startResendOtpTimer();
-    }
-
-    function openAuthModal() {
-      const modal = document.getElementById("authModalOverlay");
-      modal.classList.add("active");
-      if (currentAuthUser) {
-        showMirrorDashboard();
-      } else {
-        setMirrorMode("signin");
-        startResendOtpTimer();
-      }
-    }
-
-    function closeAuthModal() {
-      const modal = document.getElementById("authModalOverlay");
-      modal.classList.remove("active");
-      if (otpTimerInterval) {
-        clearInterval(otpTimerInterval);
-        otpTimerInterval = null;
-      }
-    }
-
-    function setMirrorMode(mode) {
-      const viewIn = document.getElementById("viewSignInForm");
-      const viewUp = document.getElementById("viewSignUpForm");
-      const viewDash = document.getElementById("mirrorDashboardView");
-      const tabsWrap = document.getElementById("mirrorModeTabsWrap");
-
-      const btnIn = document.getElementById("tabBtnSignIn");
-      const btnUp = document.getElementById("tabBtnSignUp");
-
-      tabsWrap.style.display = "flex";
-      viewDash.style.display = "none";
-
-      if (mode === "signin") {
-        viewIn.style.display = "grid";
-        viewUp.style.display = "none";
-        btnIn.classList.add("active");
-        btnUp.classList.remove("active");
-        startResendOtpTimer();
-      } else {
-        viewIn.style.display = "none";
-        viewUp.style.display = "grid";
-        btnUp.classList.add("active");
-        btnIn.classList.remove("active");
-        if (otpTimerInterval) {
-          clearInterval(otpTimerInterval);
-          otpTimerInterval = null;
-        }
-      }
-    }
-
-    function fillVehicleSignIn(plate) {
-      document.getElementById("signInIdentifierInput").value = plate;
-    }
-
-    function fillVehicleSignUp(plate, name) {
-      document.getElementById("signUpPlateInput").value = plate;
-      if (name) document.getElementById("signUpNameInput").value = name;
-    }
-
-    async function handleMirrorSignIn() {
-      const identifier = document.getElementById("signInIdentifierInput").value.trim();
-      const otp = document.getElementById("signInOtpInput").value.trim();
-      const btn = document.getElementById("signInSubmitBtn");
-
-      if (!identifier) {
-        alert("Please enter a vehicle registration number or mobile.");
-        return;
-      }
-
-      if (!otp) {
-        alert("Please enter the verification OTP.");
-        document.getElementById("signInOtpInput").focus();
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = `<span>Verifying...</span>`;
-
-      try {
-        const res = await fetch("/api/auth/signin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ identifier, otp })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          currentAuthUser = data.user;
-          updateNavbarAuth();
-          syncLocationToUser(currentAuthUser.vehicle_number);
-          startLiveTelemetryTracking(currentAuthUser.vehicle_number);
-          showMirrorDashboard();
-        } else {
-          fallbackMockAuth(identifier);
-        }
-      } catch (err) {
-        fallbackMockAuth(identifier);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `
-          <span>Sign In</span>
-          <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
-            <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
-          </svg>
-        `;
-      }
-    }
-
-    async function handleMirrorSignUp() {
-      const plate = document.getElementById("signUpPlateInput").value.trim();
-      const name = document.getElementById("signUpNameInput").value.trim();
-      const phone = document.getElementById("signUpPhoneInput").value.trim();
-      const btn = document.getElementById("signUpSubmitBtn");
-
-      if (!plate) {
-        alert("Please enter a vehicle registration plate number.");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = `<span>Registering...</span>`;
-
-      try {
-        const res = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ vehicle_number: plate, full_name: name, phone: phone })
-        });
-        const data = await res.json();
-
-        if (data.status === "success") {
-          currentAuthUser = data.user;
-          updateNavbarAuth();
-          syncLocationToUser(currentAuthUser.vehicle_number);
-          startLiveTelemetryTracking(currentAuthUser.vehicle_number);
-          showMirrorDashboard();
-        } else {
-          fallbackMockAuth(plate, name, phone);
-        }
-      } catch (err) {
-        fallbackMockAuth(plate, name, phone);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `
-          <span>Register &amp; Activate Alerts</span>
-          <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
-            <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
-          </svg>
-        `;
-      }
-    }
-
-    function fallbackMockAuth(identifier, name = "Registered Driver", phone = "+91 98201 44821") {
-      const isScorpio = identifier.includes("04") || identifier.toLowerCase().includes("scorpio");
-      const isNexon = identifier.includes("02") || identifier.toLowerCase().includes("nexon");
-      const isAmbulance = identifier.includes("AM") || identifier.includes("0911") || identifier.toLowerCase().includes("ambulance");
-      const depthMm = isAmbulance ? 450 : isScorpio ? 350 : isNexon ? 300 : 200;
-
-      currentAuthUser = {
-        full_name: name,
-        model: isAmbulance ? "Force Traveller (Ambulance)" : isScorpio ? "Mahindra Scorpio" : isNexon ? "Tata Nexon" : "Standard Hatchback",
-        wading_depth_cm: depthMm / 10.0,
-        wading_depth_mm: depthMm,
-        phone: phone,
-        vehicle_number: identifier
-      };
-      updateNavbarAuth();
-      syncLocationToUser(currentAuthUser.vehicle_number);
-      startLiveTelemetryTracking(currentAuthUser.vehicle_number);
-      showMirrorDashboard();
-    }
-
-    function showMirrorDashboard() {
-      document.getElementById("mirrorModeTabsWrap").style.display = "none";
-      document.getElementById("viewSignInForm").style.display = "none";
-      document.getElementById("viewSignUpForm").style.display = "none";
-      
-      const dash = document.getElementById("mirrorDashboardView");
-      dash.style.display = "flex";
-
-      const depthMm = currentAuthUser.wading_depth_mm || (currentAuthUser.wading_depth_cm ? Math.round(currentAuthUser.wading_depth_cm * 10) : 200);
-      const locCtx = resolveUserCityContext(currentAuthUser.vehicle_number);
-
-      document.getElementById("tOwner").innerText = currentAuthUser.full_name || "Registered Driver";
-      document.getElementById("tModel").innerText = currentAuthUser.model || currentAuthUser.vehicle_number;
-      document.getElementById("tClearance").innerText = `${depthMm} mm`;
-      document.getElementById("tPhone").innerText = currentAuthUser.phone;
-
-      const simBtn = document.querySelector(".btn-sim-alert");
-      if (simBtn) {
-        simBtn.innerText = `⚡ Simulate Cloudburst for ${locCtx.name}`;
-      }
-
-      const inboxMsg = document.getElementById("hudInboxMsg");
-      inboxMsg.innerText = `🛡️ Live telemetry active in ${locCtx.name}. Monitoring corridors for depth >${depthMm} mm.`;
-      document.getElementById("hudInboxStrip").style.borderLeftColor = "#22c55e";
-    }
-
-    async function simulateMirrorAlert() {
-      if (!currentAuthUser) return;
-      
-      const locCtx = resolveUserCityContext(currentAuthUser.vehicle_number);
-      const depthMm = currentAuthUser.wading_depth_mm || Math.round((currentAuthUser.wading_depth_cm || 20.0) * 10);
-      
-      let targetCorridor = locCtx.corridor;
-      let targetDepthMm = 285;
-
-      if (simulationData && simulationData.features && simulationData.features.length > 0) {
-        const activeStep = parseInt(document.getElementById('timeSlider').value) || 2;
-        const roads = simulationData.features
-          .filter(f => f.properties && f.properties.name && !f.properties.name.includes("Corridor") && !f.properties.name.includes("Link") && !f.properties.name.includes("Avenue"))
-          .sort((a, b) => ((b.properties.depth_timeline_cm || [0])[activeStep] || 0) - ((a.properties.depth_timeline_cm || [0])[activeStep] || 0));
-
-        if (roads.length > 0 && roads[0].properties.name) {
-          targetCorridor = roads[0].properties.name;
-          const roadDepth = (roads[0].properties.depth_timeline_cm || [0])[activeStep] || 0;
-          if (roadDepth > 5) targetDepthMm = Math.round(roadDepth * 10);
-        }
-      }
-
-      const isHazard = targetDepthMm >= depthMm;
-      const alertText = isHazard
-        ? `⚠️ Peak ponding at ${targetCorridor} is ${targetDepthMm} mm (Exceeds ${depthMm} mm limit). Divert to ${locCtx.detour}!`
-        : `ℹ️ ${targetCorridor} has ${targetDepthMm} mm standing water. Passable for your ${currentAuthUser.model} (Limit: ${depthMm} mm).`;
-
-      const msg = document.getElementById("hudInboxMsg");
-      const strip = document.getElementById("hudInboxStrip");
-      if (msg) msg.innerText = alertText;
-      if (strip) strip.style.borderLeftColor = isHazard ? "#ef4444" : "#22c55e";
-
-      try {
-        await fetch("/api/user/simulate-alert", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vehicle_number: currentAuthUser.vehicle_number,
-            current_water_depth_cm: targetDepthMm / 10.0,
-            corridor_name: targetCorridor
-          })
-        });
-      } catch (err) {
-        console.warn("Alert simulation API sync warning:", err);
-      }
-    }
-
-    function handleMirrorLogout() {
-      stopLiveTelemetryTracking();
-      currentAuthUser = null;
-      updateNavbarAuth();
-      setMirrorMode("signin");
-    }
-
-    function updateNavbarAuth() {
-      const navControls = document.getElementById("authNavControls");
-      const navPill = document.getElementById("userProfileNavPill");
-
-      if (currentAuthUser) {
-        navControls.style.display = "none";
-        navPill.style.display = "block";
-        document.getElementById("navVehiclePlate").innerText = `${currentAuthUser.vehicle_number} (${currentAuthUser.model.split(' ')[0]})`;
-      } else {
-        navControls.style.display = "block";
-        navPill.style.display = "none";
-      }
-    }
-
     /* MapLibre 3D Vector Map & Dual Route Engine */
     let currentLat = 28.6315;
     let currentLon = 77.2167;
@@ -2454,6 +2701,36 @@
       });
 
       reloadSimulation();
+
+      const hoverPopup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 10
+      });
+
+      map.on('mousemove', 'road-layer', (e) => {
+        if (e.features.length > 0) {
+          map.getCanvas().style.cursor = 'pointer';
+          const props = e.features[0].properties;
+          const activeStep = parseInt(document.getElementById('timeSlider').value) || 2;
+          let timeline = [0];
+          try { timeline = JSON.parse(props.depth_timeline_cm || "[0]"); } catch(err) {}
+          const currentDepth = timeline[activeStep] || 0;
+
+          hoverPopup.setLngLat(e.lngLat).setHTML(`
+            <div style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#0f172a; padding:4px;">
+              <b style="color:#0284c7;">${props.name || 'Road Corridor'}</b><br/>
+              <span>Slope: ${props.slope_pct || 0.6}%</span><br/>
+              <span>Ponding Depth: <b>${currentDepth} cm</b></span>
+            </div>
+          `).addTo(map);
+        }
+      });
+
+      map.on('mouseleave', 'road-layer', () => {
+        map.getCanvas().style.cursor = '';
+        hoverPopup.remove();
+      });
     });
 
     function handleSearchKey(event) {
@@ -2519,8 +2796,6 @@
       if (map.getSource('safe-route')) {
         map.getSource('safe-route').setData({ type: 'FeatureCollection', features: [] });
       }
-      document.getElementById('routeStatusCard').style.display = 'none';
-      document.getElementById('navActionContainer').style.display = 'none';
 
       const legend = document.getElementById("mapLegend");
       if (legend) {
@@ -2556,7 +2831,7 @@
       clearRouting();
       reloadSimulation();
       if (currentAuthUser) {
-        showMirrorDashboard();
+        window.showMirrorDashboard();
       }
     }
 
@@ -2722,16 +2997,6 @@
       const step = document.getElementById('timeSlider').value;
       const scenario = document.getElementById('scenarioSelector').value;
       const profile = document.getElementById('profileSelector').value;
-      const statusCard = document.getElementById('routeStatusCard');
-      const navContainer = document.getElementById('navActionContainer');
-      const navBtn = document.getElementById('gmapsNavBtn');
-      
-      statusCard.style.display = 'block';
-      navContainer.style.display = 'none';
-
-      document.getElementById('defaultRouteStat').innerText = 'Computing 3D path...';
-      document.getElementById('safeRouteStat').innerText = 'Computing 3D path...';
-      document.getElementById('instructionPanel').innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Evaluating hydrologic friction & alternate diversion corridors...</div>';
 
       fetch(`/api/route?start_lat=${start.lat}&start_lon=${start.lng}&end_lat=${end.lat}&end_lon=${end.lng}&forecast_step=${step}&scenario=${scenario}&profile=${profile}`, {
         signal: routeAbortController.signal
@@ -2749,9 +3014,6 @@
                 geometry: { type: 'LineString', coordinates: coords }
               });
             }
-            document.getElementById('defaultRouteStat').innerHTML = `<span style="color:#e11d48;">${defaultRoute.max_water_depth_cm} cm (${defaultRoute.status})</span>`;
-          } else {
-            document.getElementById('defaultRouteStat').innerHTML = `<span style="color:var(--text-muted);">No route found</span>`;
           }
 
           if (safeRoute && safeRoute.geometry) {
@@ -2766,37 +3028,14 @@
               map.fitBounds(bounds, { padding: 60, pitch: 55, bearing: 20 });
             }
 
-            document.getElementById('safeRouteStat').innerHTML = `<span style="color:#22c55e;">${safeRoute.max_water_depth_cm} cm (${safeRoute.status})</span>`;
-
             const waypoints = data.nav_waypoints || [];
-            navBtn.href = buildGoogleMapsDeepLink(start, end, waypoints);
-            navContainer.style.display = 'block';
-
-            const panel = document.getElementById('instructionPanel');
-            panel.innerHTML = '<div style="font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Guidance telemetry</div>';
-
-            if (safeRoute.max_water_depth_cm < (defaultRoute ? defaultRoute.max_water_depth_cm : 999)) {
-              panel.innerHTML += `
-                <div class="instruction-step">
-                  <div class="instruction-diversion">🛡️ <b>Safe Diversion Active:</b> Detour avoids high-inundation street segments.</div>
-                  <div style="margin-top:4px; font-size:11px; color:var(--text-muted);">Ponding reduced to ${safeRoute.max_water_depth_cm} cm along elevated corridor.</div>
-                </div>`;
-            } else {
-              panel.innerHTML += `<div style="color:var(--status-green); font-size:11px; margin-top:4px;">✓ Direct corridor is passable for chosen vehicle profile.</div>`;
-            }
-          } else {
-            document.getElementById('safeRouteStat').innerHTML = `<span style="color:var(--text-muted);">No safe route available</span>`;
-            document.getElementById('instructionPanel').innerHTML = `<div style="color:var(--status-red); font-size:11px;">All corridors exceed impassable depth thresholds.</div>`;
-            navContainer.style.display = 'none';
+            const deepLink = buildGoogleMapsDeepLink(start, end, waypoints);
+            window.open(deepLink, '_blank');
           }
         })
         .catch(err => {
           if (err.name !== 'AbortError') {
             console.error("Routing error:", err);
-            document.getElementById('defaultRouteStat').innerText = 'Routing unavailable';
-            document.getElementById('safeRouteStat').innerText = 'Routing unavailable';
-            document.getElementById('instructionPanel').innerHTML = '';
-            navContainer.style.display = 'none';
           }
         });
     }
