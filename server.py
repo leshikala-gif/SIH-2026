@@ -2,10 +2,14 @@ import os
 import sys
 import glob
 import math
+import re
+import time
 import requests
 from datetime import datetime, timezone
+from typing import List, Dict, Optional
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel
 from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +28,7 @@ try:
 except ImportError:
     fusion_engine = None
 
-app = FastAPI()
+app = FastAPI(title="JalMarg Urban Flood Intelligence API", version="4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,6 +65,120 @@ CACHE_DIR = "data/processed/geojson_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 MAX_CACHE_FILES = 80
 
+STATE_RTO_MAP = {
+    "DL": {"state": "Delhi", "city": "New Delhi", "lat": 28.6315, "lon": 77.2167},
+    "MH": {"state": "Maharashtra", "city": "Mumbai", "lat": 19.0182, "lon": 72.8434},
+    "MP": {"state": "Madhya Pradesh", "city": "Bhopal", "lat": 23.2064, "lon": 77.4601},
+    "KA": {"state": "Karnataka", "city": "Bengaluru", "lat": 12.9716, "lon": 77.5946},
+    "TN": {"state": "Tamil Nadu", "city": "Chennai", "lat": 13.0827, "lon": 80.2707},
+    "RJ": {"state": "Rajasthan", "city": "Jaipur", "lat": 26.9124, "lon": 75.7873},
+    "TS": {"state": "Telangana", "city": "Hyderabad", "lat": 17.3850, "lon": 78.4867},
+    "WB": {"state": "West Bengal", "city": "Kolkata", "lat": 22.5726, "lon": 88.3639}
+}
+
+MOCK_VAHAN_DATABASE: Dict[str, dict] = {
+    "MH01AB1234": {
+        "owner": "Rajesh Sharma",
+        "phone": "+91 98201 44821",
+        "masked_phone": "+91 98*** **821",
+        "model": "Maruti Suzuki Swift",
+        "vehicle_type": "car",
+        "wading_depth_cm": 20.0,
+        "wading_depth_mm": 200.0,
+        "city": "Mumbai",
+        "state": "Maharashtra"
+    },
+    "MH02CD5678": {
+        "owner": "Pooja Deshmukh",
+        "phone": "+91 98332 11904",
+        "masked_phone": "+91 98*** **904",
+        "model": "Tata Nexon",
+        "vehicle_type": "suv",
+        "wading_depth_cm": 30.0,
+        "wading_depth_mm": 300.0,
+        "city": "Mumbai",
+        "state": "Maharashtra"
+    },
+    "MP04TA5510": {
+        "owner": "Vikram Patel",
+        "phone": "+91 94250 88219",
+        "masked_phone": "+91 94*** **219",
+        "model": "Mahindra Scorpio",
+        "vehicle_type": "suv",
+        "wading_depth_cm": 35.0,
+        "wading_depth_mm": 350.0,
+        "city": "Bhopal",
+        "state": "Madhya Pradesh"
+    },
+    "DL01AM0911": {
+        "owner": "Lifeline Emergency Services",
+        "phone": "+91 99112 00102",
+        "masked_phone": "+91 99*** **102",
+        "model": "Force Traveller (Ambulance)",
+        "vehicle_type": "ambulance",
+        "wading_depth_cm": 45.0,
+        "wading_depth_mm": 450.0,
+        "city": "Delhi",
+        "state": "Delhi"
+    }
+}
+
+USERS_DATABASE: Dict[str, dict] = {}
+LAST_ALERT_TIMESTAMPS: Dict[str, float] = {}
+ALERT_COOLDOWN_SECONDS = 180
+
+class SignUpRequest(BaseModel):
+    vehicle_number: str
+    phone: str
+    full_name: Optional[str] = "Citizen Driver"
+    channels: List[str] = ["sms", "whatsapp"]
+
+class SignInRequest(BaseModel):
+    identifier: str
+    otp: str
+
+class SimulateAlertRequest(BaseModel):
+    vehicle_number: str
+    current_water_depth_cm: float
+    corridor_name: str
+
+class LiveTelemetryPing(BaseModel):
+    vehicle_number: str
+    lat: float
+    lon: float
+    speed_kmh: Optional[float] = 0.0
+    heading: Optional[float] = 0.0
+
+def sanitize_plate(plate: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]", "", plate).upper()
+
+def get_or_derive_vahan_profile(plate: str) -> dict:
+    clean_plate = sanitize_plate(plate)
+    if clean_plate in MOCK_VAHAN_DATABASE:
+        data = MOCK_VAHAN_DATABASE[clean_plate].copy()
+        data["plate"] = clean_plate
+        return data
+
+    is_suv = any(k in clean_plate for k in ["04", "SUV", "THAR", "SCORP"])
+    is_amb = any(k in clean_plate for k in ["AM", "0911", "EMERG"])
+    depth_mm = 450.0 if is_amb else (350.0 if is_suv else 200.0)
+
+    prefix = clean_plate[:2]
+    loc_meta = STATE_RTO_MAP.get(prefix, {"state": "India", "city": "Current Region"})
+
+    return {
+        "plate": clean_plate,
+        "owner": "Registered Driver",
+        "phone": "+91 98765 43210",
+        "masked_phone": "+91 98*** **210",
+        "model": "Force Traveller (Ambulance)" if is_amb else ("Mahindra Scorpio" if is_suv else "Standard Hatchback"),
+        "vehicle_type": "ambulance" if is_amb else ("suv" if is_suv else "car"),
+        "wading_depth_cm": depth_mm / 10.0,
+        "wading_depth_mm": depth_mm,
+        "city": loc_meta["city"],
+        "state": loc_meta["state"]
+    }
+
 def classify_zone(lat: float, lon: float):
     if (lat < 21.0 and lon < 74.0) or lon > 85.0:
         return ZONE_DEFAULTS["coastal"]
@@ -71,10 +189,8 @@ def classify_zone(lat: float, lon: float):
 def sample_smoothed_slope(geom, src, transformer=None, n_points=5):
     if geom is None or geom.is_empty:
         return 0.6
-    
     fractions = np.linspace(0.1, 0.9, n_points)
     sample_pts = [geom.interpolate(f, normalized=True) for f in fractions]
-    
     coords = []
     for p in sample_pts:
         x, y = p.x, p.y
@@ -84,7 +200,6 @@ def sample_smoothed_slope(geom, src, transformer=None, n_points=5):
     
     bounds = src.bounds
     sampled_vals = []
-    
     for (x, y) in coords:
         if bounds.left <= x <= bounds.right and bounds.bottom <= y <= bounds.top:
             try:
@@ -93,10 +208,8 @@ def sample_smoothed_slope(geom, src, transformer=None, n_points=5):
                     sampled_vals.append(float(val))
             except Exception:
                 continue
-                
     if not sampled_vals:
         return 0.6
-        
     return round(float(np.mean(sampled_vals)), 2)
 
 def attach_slope_from_dem(gdf_edges, dem_path="data/processed/slope_pct.tif", n_points=5):
@@ -124,13 +237,11 @@ def attach_slope_from_dem(gdf_edges, dem_path="data/processed/slope_pct.tif", n_
             gdf_edges["slope_pct"] = slopes
     except Exception:
         gdf_edges["slope_pct"] = 0.6
-
     return gdf_edges
 
 def generate_natural_corridor_fallback(lat: float, lon: float, dist_m: float = 1200):
     delta_deg = max(min(dist_m, 1400), 800) / 111320.0
     features = []
-    
     steps = 6
     offsets = np.linspace(-delta_deg, delta_deg, steps)
     
@@ -167,18 +278,6 @@ def get_or_fetch_edges_geojson(lat: float, lon: float, dist_m: float = 1000):
         except Exception:
             pass
 
-    try:
-        existing_files = glob.glob(os.path.join(CACHE_DIR, "*.geojson"))
-        if len(existing_files) >= MAX_CACHE_FILES:
-            existing_files.sort(key=os.path.getmtime)
-            for f in existing_files[:20]:
-                try:
-                    os.remove(f)
-                except OSError:
-                    pass
-    except Exception:
-        pass
-
     delta_deg = min(dist_m, 900) / 111320.0
     south, north = round(lat - delta_deg, 5), round(lat + delta_deg, 5)
     west, east = round(lon - delta_deg, 5), round(lon + delta_deg, 5)
@@ -198,14 +297,13 @@ out geom qt;
     endpoints = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
-        "https://lz4.overpass-api.de/api/interpreter",
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+        "https://lz4.overpass-api.de/api/interpreter"
     ]
 
     elements = None
     for ep in endpoints:
         try:
-            resp = requests.post(ep, data={"data": overpass_query}, headers=headers, timeout=20)
+            resp = requests.post(ep, data={"data": overpass_query}, headers=headers, timeout=15)
             if resp.status_code == 200:
                 data = resp.json()
                 el = data.get("elements", [])
@@ -235,8 +333,7 @@ out geom qt;
                 pass
             return gdf, "live_overpass"
 
-    fallback_gdf = generate_natural_corridor_fallback(lat, lon, dist_m=dist_m)
-    return fallback_gdf, "telemetry_fallback"
+    return generate_natural_corridor_fallback(lat, lon, dist_m=dist_m), "telemetry_fallback"
 
 def resolve_rain_series(lat: float, lon: float, scenario: str):
     if scenario in SCENARIO_PROFILES:
@@ -293,10 +390,172 @@ def resolve_rain_series(lat: float, lon: float, scenario: str):
         rain_series.append(0.0)
     return rain_series
 
+# ============================================================================
+# ENDPOINTS
+# ============================================================================
+
+@app.post("/api/auth/signup")
+async def auth_signup(payload: SignUpRequest):
+    clean_plate = sanitize_plate(payload.vehicle_number)
+    vahan_info = get_or_derive_vahan_profile(clean_plate)
+    depth_mm = vahan_info.get("wading_depth_mm", 200.0)
+    
+    user_record = {
+        "user_id": f"usr_{len(USERS_DATABASE) + 101}",
+        "full_name": payload.full_name or vahan_info["owner"],
+        "phone": payload.phone or vahan_info["phone"],
+        "masked_phone": (payload.phone[:5] + "*** **" + payload.phone[-3:]) if len(payload.phone) >= 10 else vahan_info["masked_phone"],
+        "vehicle_number": clean_plate,
+        "model": vahan_info["model"],
+        "vehicle_type": vahan_info["vehicle_type"],
+        "wading_depth_cm": depth_mm / 10.0,
+        "wading_depth_mm": depth_mm,
+        "city": vahan_info["city"],
+        "channels": payload.channels,
+        "alerts_inbox": []
+    }
+    
+    USERS_DATABASE[clean_plate] = user_record
+    return {"status": "success", "message": "Vehicle registered successfully", "user": user_record}
+
+@app.post("/api/auth/signin")
+async def auth_signin(payload: SignInRequest):
+    clean_id = sanitize_plate(payload.identifier)
+    
+    if payload.otp != "7429":
+        return {"status": "error", "message": "Invalid verification code. Use demo code: 7429"}
+
+    user = None
+    if clean_id in USERS_DATABASE:
+        user = USERS_DATABASE[clean_id]
+    else:
+        for u in USERS_DATABASE.values():
+            if clean_id in sanitize_plate(u["phone"]):
+                user = u
+                break
+                
+    if not user:
+        vahan_info = get_or_derive_vahan_profile(clean_id)
+        depth_mm = vahan_info.get("wading_depth_mm", 200.0)
+        user = {
+            "user_id": f"usr_{len(USERS_DATABASE) + 101}",
+            "full_name": vahan_info["owner"],
+            "phone": vahan_info["phone"],
+            "masked_phone": vahan_info["masked_phone"],
+            "vehicle_number": clean_id,
+            "model": vahan_info["model"],
+            "vehicle_type": vahan_info["vehicle_type"],
+            "wading_depth_cm": depth_mm / 10.0,
+            "wading_depth_mm": depth_mm,
+            "city": vahan_info["city"],
+            "channels": ["sms", "whatsapp"],
+            "alerts_inbox": []
+        }
+        USERS_DATABASE[clean_id] = user
+
+    return {"status": "success", "message": "Signed in successfully", "user": user}
+
+@app.post("/api/user/simulate-alert")
+async def user_simulate_alert(payload: SimulateAlertRequest):
+    clean_plate = sanitize_plate(payload.vehicle_number)
+    user = USERS_DATABASE.get(clean_plate, get_or_derive_vahan_profile(clean_plate))
+    
+    wading_limit_mm = user.get("wading_depth_mm", 200.0)
+    water_depth_mm = round(payload.current_water_depth_cm * 10.0)
+    is_hazard = water_depth_mm >= wading_limit_mm
+
+    alert_item = {
+        "id": f"alt_{datetime.now().strftime('%H%M%S')}",
+        "time": "Just now",
+        "corridor": payload.corridor_name,
+        "water_depth_mm": water_depth_mm,
+        "severity": "CRITICAL" if is_hazard else "PASSABLE",
+        "message": (
+            f"⚠️ Peak ponding at {payload.corridor_name} reached {water_depth_mm:.0f} mm (Limit: {wading_limit_mm:.0f} mm). Divert immediately!"
+            if is_hazard else
+            f"ℹ️ {payload.corridor_name} has {water_depth_mm:.0f} mm standing water. Passable for your {user.get('model', 'vehicle')} (Limit: {wading_limit_mm:.0f} mm)."
+        )
+    }
+
+    if "alerts_inbox" in user:
+        user["alerts_inbox"].insert(0, alert_item)
+
+    return {
+        "status": "success",
+        "alert": alert_item,
+        "dispatched_to": user.get("phone", "+91 98201 44821"),
+        "channels": user.get("channels", ["sms", "whatsapp"])
+    }
+
+@app.post("/api/user/live-telemetry")
+async def ingest_live_telemetry(payload: LiveTelemetryPing):
+    clean_plate = sanitize_plate(payload.vehicle_number)
+    user = USERS_DATABASE.get(clean_plate, get_or_derive_vahan_profile(clean_plate))
+    
+    user_wading_limit_mm = user.get("wading_depth_mm", 200.0)
+    user_location = Point(payload.lon, payload.lat)
+
+    gdf, _ = get_or_fetch_edges_geojson(payload.lat, payload.lon, dist_m=800)
+    rain_series = resolve_rain_series(payload.lat, payload.lon, scenario="mosdac")
+    
+    zone = classify_zone(payload.lat, payload.lon)
+    C = zone["C"]
+    drainage_step = zone["drainage_mm_hr"] * (15.0 / 60.0)
+
+    hazard_found = False
+    critical_street = ""
+    critical_depth_mm = 0.0
+
+    if gdf is not None and not gdf.empty:
+        search_geom = user_location.buffer(0.0045)
+        nearby_edges = gdf[gdf.geometry.intersects(search_geom)]
+
+        for _, row in nearby_edges.iterrows():
+            st_name = str(row.get("name", "Active Road Corridor"))
+            if st_name in ["Active Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
+                continue
+            
+            p_mm = rain_series[0] if rain_series else 15.0
+            excess_mm = max(0.0, (max(0.0, p_mm - 5.0) * C) - drainage_step)
+            depth_mm = excess_mm * 4.0 * 10.0
+
+            if depth_mm >= user_wading_limit_mm:
+                hazard_found = True
+                critical_street = st_name
+                critical_depth_mm = round(depth_mm)
+                break
+
+    now = time.time()
+    last_sent = LAST_ALERT_TIMESTAMPS.get(clean_plate, 0)
+    should_dispatch_external = hazard_found and (now - last_sent > ALERT_COOLDOWN_SECONDS)
+
+    alert_payload = None
+    if hazard_found:
+        alert_payload = {
+            "title": "FLOOD HAZARD IN VICINITY",
+            "message": (
+                f"⚠️ Water level at {critical_street} reached {critical_depth_mm:.0f} mm, "
+                f"exceeding your {user['model']} clearance limit ({user_wading_limit_mm:.0f} mm). "
+                f"Reroute immediately via JalMarg."
+            ),
+            "corridor": critical_street,
+            "depth_mm": critical_depth_mm,
+            "wading_limit_mm": user_wading_limit_mm
+        }
+
+        if should_dispatch_external:
+            LAST_ALERT_TIMESTAMPS[clean_plate] = now
+
+    return {
+        "status": "synchronized",
+        "hazard_detected": hazard_found,
+        "alert": alert_payload
+    }
+
 @app.get("/api/nowcast")
 def dynamic_nowcast(
-    lat: float = Query(19.0182, description="Center Latitude"),
-    lon: float = Query(72.8434, description="Center Longitude"),
+    lat: float = Query(28.6315, description="Center Latitude"),
+    lon: float = Query(77.2167, description="Center Longitude"),
     dist_m: float = Query(1000, description="Corridor radius in meters"),
     scenario: str = Query("mosdac", description="Precipitation mode")
 ):
@@ -338,8 +597,8 @@ def dynamic_nowcast(
         if row.geometry is None or row.geometry.is_empty:
             continue
 
-        raw_name = row.get("name", "Live Road Corridor")
-        st_name = str(raw_name[0]) if isinstance(raw_name, (list, np.ndarray)) else str(raw_name or "Live Road Corridor")
+        raw_name = row.get("name", "Active Road Corridor")
+        st_name = str(raw_name[0]) if isinstance(raw_name, (list, np.ndarray)) else str(raw_name or "Active Road Corridor")
 
         raw_hw = row.get("highway", "residential")
         hw_type = str(raw_hw[0]) if isinstance(raw_hw, (list, np.ndarray)) else str(raw_hw or "residential")
@@ -366,9 +625,9 @@ def dynamic_nowcast(
             depth_timeline.append(round(cumulative_pond_mm / 10.0, 1))
 
         max_d = max(depth_timeline) if depth_timeline else 0.0
-        if max_d >= 25.0 and st_name not in ["Live Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
+        if max_d >= 25.0 and st_name not in ["Active Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
             severe_streets.add(st_name)
-        elif max_d >= 15.0 and st_name not in ["Live Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
+        elif max_d >= 15.0 and st_name not in ["Active Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
             high_streets.add(st_name)
 
         features.append({
@@ -566,8 +825,8 @@ def calculate_safe_route(
 
 @app.get("/api/municipal/pumps")
 def get_pump_dispatch(
-    lat: float = Query(19.0182, description="Center Latitude"),
-    lon: float = Query(72.8434, description="Center Longitude"),
+    lat: float = Query(28.6315, description="Center Latitude"),
+    lon: float = Query(77.2167, description="Center Longitude"),
     scenario: str = Query("mosdac", description="Precipitation mode"),
     forecast_step: int = Query(2, ge=0, le=7, description="Forecast step index")
 ):
@@ -587,7 +846,7 @@ def get_pump_dispatch(
         raw_name = row.get("name", "")
         st_name = str(raw_name[0]) if isinstance(raw_name, (list, np.ndarray)) else str(raw_name or "")
         
-        if not st_name or st_name in ["Live Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
+        if not st_name or st_name in ["Active Road Corridor", "Urban Corridor", "Arterial Link", "Avenue Link", "Sector Cross"]:
             continue
 
         hw_type = str(row.get("highway", "residential"))
@@ -612,7 +871,6 @@ def get_pump_dispatch(
             road_length_m = row.geometry.length * 111320.0 if row.geometry else 150.0
             road_width_m = 14.0 if hw_type in ["primary", "trunk", "motorway"] else 7.0
             volume_m3 = round((depth_at_step / 100.0) * road_length_m * road_width_m)
-
             pumps_needed = max(1, min(8, math.ceil(volume_m3 / 150.0)))
             
             action = "Deploy standard high-flow submersible pump units"
@@ -635,8 +893,16 @@ def get_pump_dispatch(
 
 @app.get("/")
 def serve_home():
-    return FileResponse("static/index.html")
+    response = FileResponse("static/index.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 if os.path.exists("data"):
     app.mount("/data", StaticFiles(directory="data"), name="data")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

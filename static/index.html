@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>JalMarg | Urban Flood Intelligence Platform</title>
 
   <!-- MapLibre GL JS Dependencies -->
@@ -10,6 +13,11 @@
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -34,7 +42,7 @@
       padding: 0;
       overflow-x: hidden;
       background-color: var(--bg-base);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: var(--text-main);
     }
 
@@ -119,11 +127,7 @@
       color: var(--text-main);
       letter-spacing: 0.01em;
     }
-    .brand-icon {
-      font-size: 14px;
-      color: var(--accent-blue);
-      display: inline-block;
-    }
+
     .nav-tabs { display: flex; gap: 4px; }
     .tab-btn {
       background: transparent;
@@ -144,6 +148,41 @@
       border-bottom-color: var(--accent-blue);
       border-bottom-width: 2px;
     }
+
+    /* Single Unified Auth Button */
+    .single-auth-btn {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+    }
+    .single-auth-btn:hover {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+    }
+
+    .user-profile-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e293b;
+      border: 1px solid #38bdf8;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #f8fafc;
+    }
+    .user-profile-badge:hover { background: #0f172a; }
 
     .main-content {
       max-width: 1280px;
@@ -269,11 +308,11 @@
       padding: 2px 8px;
       border-radius: 3px;
       font-size: 11px;
-      font-family: ui-monospace, monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-weight: 600;
     }
 
-    /* Unbreakable Viewport-Pinned Legend */
+    /* Viewport-Pinned Legend */
     .map-legend {
       position: absolute;
       bottom: 16px;
@@ -342,7 +381,7 @@
       padding: 14px;
       font-size: 12px;
       display: none;
-      width: 320px;
+      width: 330px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
     .routing-status-card b { color: var(--text-main); }
@@ -361,6 +400,642 @@
       color: #eab308;
       border-radius: 0 3px 3px 0;
     }
+
+    /* ============================================================ */
+    /* PROCEDURAL MAP-ENGULFING MIST TRANSITION                     */
+    /* ============================================================ */
+    .auth-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 13, 0.72);
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
+      z-index: 9999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow-y: auto;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.45s ease-out, visibility 0.45s ease-out, backdrop-filter 0.5s ease-out;
+    }
+
+    .auth-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .mist-curtain {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .auth-modal-overlay.active .mist-curtain {
+      opacity: 1;
+    }
+
+    .mist-layer {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .mist-layer-1 {
+      width: 140vw; height: 130vh;
+      top: -20vh; left: -20vw;
+      background: radial-gradient(ellipse at 35% 45%, rgba(186, 230, 253, 0.3) 0%, rgba(56, 189, 248, 0.12) 40%, transparent 72%);
+      filter: blur(55px);
+      animation: mistRoll1 12s infinite alternate ease-in-out;
+    }
+
+    .mist-layer-2 {
+      width: 120vw; height: 120vh;
+      bottom: -15vh; right: -10vw;
+      background: radial-gradient(ellipse at 65% 55%, rgba(255, 255, 255, 0.25) 0%, rgba(30, 58, 102, 0.18) 45%, transparent 70%);
+      filter: blur(65px);
+      animation: mistRoll2 16s infinite alternate-reverse ease-in-out;
+    }
+
+    .mist-layer-3 {
+      width: 160vw; height: 80vh;
+      top: 15vh; left: -30vw;
+      background: radial-gradient(ellipse at 50% 50%, rgba(224, 242, 254, 0.2) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 70%);
+      filter: blur(48px);
+      animation: mistDriftHorizontal 10s infinite alternate ease-in-out;
+    }
+
+    .mist-layer-4 {
+      width: 90vw; height: 90vh;
+      top: 5vh; left: 5vw;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, rgba(224, 242, 254, 0.05) 55%, transparent 70%);
+      filter: blur(40px);
+      animation: mistPulseCenter 7s infinite alternate ease-in-out;
+    }
+
+    @keyframes mistRoll1 {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(40px, -25px) scale(1.06); }
+      100% { transform: translate(-30px, 30px) scale(0.96); }
+    }
+
+    @keyframes mistRoll2 {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-35px, 20px) scale(1.04); }
+      100% { transform: translate(25px, -30px) scale(0.98); }
+    }
+
+    @keyframes mistDriftHorizontal {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(60px); }
+    }
+
+    @keyframes mistPulseCenter {
+      0% { opacity: 0.35; transform: scale(0.95); }
+      100% { opacity: 0.85; transform: scale(1.05); }
+    }
+
+    /* Modal Canvas Container (Seamless borderless finish) */
+    .poster-container {
+      width: 800px;
+      height: 570px;
+      max-width: 95vw;
+      max-height: 94vh;
+      background: transparent;
+      padding: 0;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 35px 85px rgba(0, 0, 0, 0.9), 0 0 50px rgba(56, 189, 248, 0.2);
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      overflow: hidden;
+      transform: scale(0.82) translateY(24px);
+      filter: blur(35px);
+      opacity: 0;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.22s,
+                  filter 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.22s,
+                  opacity 0.45s ease 0.18s;
+    }
+
+    .auth-modal-overlay.active .poster-container {
+      transform: scale(1) translateY(0);
+      filter: blur(0px);
+      opacity: 1;
+    }
+
+    /* Graphic Orange Field */
+    .orange-canvas {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background-color: #e55e14;
+      background-image: 
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 3px),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 80%);
+      border: 2px solid #09090b;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    /* Windshield Roof Cutout */
+    .roof-wedge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 120px;
+      background: #09090b;
+      clip-path: polygon(0 0, 100% 0, 100% 70px, 0 95px);
+      z-index: 2;
+    }
+
+    /* Close Button */
+    .modal-dismiss-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+    .modal-dismiss-btn:hover {
+      background: #09090b;
+      border-color: #ffffff;
+    }
+
+    /* Mirror Mount Stem Arm */
+    .mirror-mount-arm {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      width: 48px;
+      height: 80px;
+      background: #09090b;
+      transform: translateX(-50%) rotate(24deg);
+      transform-origin: top center;
+      z-index: 3;
+    }
+
+    /* REAR-VIEW MIRROR CASING */
+    .rearview-mirror-container {
+      position: relative;
+      margin-top: 35px;
+      width: 740px;
+      max-width: 96%;
+      height: 340px;
+      background: #09090b;
+      border-radius: 52px 58px 72px 66px / 42px 48px 60px 54px;
+      padding: 5px;
+      box-shadow: 
+        0 22px 48px rgba(0, 0, 0, 0.65),
+        inset 0 1px 3px rgba(255, 255, 255, 0.25);
+      z-index: 4;
+      perspective: 800px;
+      overflow: hidden;
+    }
+
+    /* Mirror Day/Night Flip Tab */
+    .mirror-flip-tab {
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 18px;
+      background: #09090b;
+      border-radius: 4px 4px 8px 8px;
+      border-top: 1.5px solid rgba(255,255,255,0.2);
+      z-index: 3;
+    }
+
+    /* Reflective Glass Area */
+    .mirror-reflective-surface {
+      width: 100%;
+      height: 100%;
+      border-radius: 48px 54px 68px 62px / 38px 44px 56px 50px;
+      position: relative;
+      overflow: hidden;
+      border: none;
+      box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* SVG Reflection Scene */
+    .mirror-landscape-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Glass Darkening Overlay */
+    .mirror-glass-frost {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 16, 28, 0.86);
+      z-index: 2;
+    }
+
+    /* Content Box inside Mirror */
+    .mirror-content-box {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      padding: 20px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    /* Mirror Header Bar */
+    .mirror-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      padding-bottom: 10px;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-logo-icon {
+      width: 22px;
+      height: 22px;
+      background: #0284c7;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+    }
+    .brand-logo-icon svg {
+      width: 14px;
+      height: 14px;
+      fill: #ffffff;
+    }
+
+    .brand-name {
+      font-size: 14.5px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #f8fafc;
+    }
+
+    /* Mode Selector Tabs (Sign In vs Register) */
+    .mirror-mode-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 5px;
+      padding: 2px;
+      gap: 3px;
+    }
+    .mirror-tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 13px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .mirror-tab-btn.active {
+      background: #38bdf8;
+      color: #041226;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+    }
+
+    /* Two-Column Form Layout */
+    .mirror-form-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .field-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .input-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: #bae6fd;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .text-input {
+      width: 100%;
+      height: 38px;
+      background: rgba(6, 11, 22, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      border-radius: 4px;
+      padding: 0 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .text-input:focus {
+      border-color: #38bdf8;
+      background: rgba(8, 16, 32, 0.95);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+    }
+
+    /* License Plate Formatted Box */
+    .plate-input-wrapper {
+      display: flex;
+      background: #ffffff;
+      border: 1.5px solid #000;
+      border-radius: 4px;
+      height: 38px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .ind-badge {
+      background: #002b80;
+      color: #ff9933;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 0 9px;
+      display: flex;
+      align-items: center;
+      letter-spacing: 0.5px;
+      user-select: none;
+    }
+    .plate-input {
+      flex: 1;
+      border: none;
+      padding: 0 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #0f172a;
+      outline: none;
+      background: transparent;
+    }
+
+    /* Actions Column */
+    .action-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-options-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-label input {
+      accent-color: #e55e14;
+      cursor: pointer;
+    }
+
+    /* Resend OTP Button with countdown styling */
+    .resend-otp-btn {
+      background: none;
+      border: none;
+      color: #fdba74;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s, opacity 0.15s;
+      text-decoration: underline;
+    }
+    .resend-otp-btn:hover:not(:disabled) {
+      color: #ffffff;
+    }
+    .resend-otp-btn:disabled {
+      color: #94a3b8;
+      text-decoration: none;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .mirror-submit-btn {
+      height: 40px;
+      width: 100%;
+      background: #e55e14;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 5px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 14px rgba(229, 94, 20, 0.5);
+    }
+    .mirror-submit-btn:hover {
+      background: #d44d05;
+      box-shadow: 0 0 18px rgba(249, 115, 22, 0.7);
+    }
+    .mirror-submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    .demo-chip-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .demo-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      color: #94a3b8;
+    }
+    .chip-btn {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #7dd3fc;
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip-btn:hover {
+      background: #38bdf8;
+      color: #041226;
+    }
+
+    /* Driver Telematics HUD */
+    .mirror-dashboard-view {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 5px;
+      padding: 10px 14px;
+    }
+    .telemetry-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .t-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .t-val {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .inbox-alert-strip {
+      background: rgba(2, 6, 23, 0.8);
+      border-left: 3px solid #ef4444;
+      padding: 10px 14px;
+      border-radius: 0 4px 4px 0;
+      font-size: 11.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .dashboard-actions-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sim-alert {
+      flex: 1.1;
+      height: 38px;
+      background: rgba(225, 29, 72, 0.35);
+      border: 1px solid #f43f5e;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-sim-alert:hover {
+      background: #e11d48;
+    }
+    .btn-gmaps-nav {
+      flex: 1.3;
+      height: 38px;
+      background: #2563eb;
+      border: 1px solid #60a5fa;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .btn-gmaps-nav:hover {
+      background: #1d4ed8;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+    }
+    .btn-logout {
+      width: 76px;
+      height: 38px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-logout:hover {
+      background: #334155;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -373,10 +1048,12 @@
     <div id="heroHud" class="relative z-10 flex flex-col justify-between w-full h-full p-8 md:p-14 pointer-events-none">
       <header class="flex items-center justify-between w-full max-w-7xl mx-auto">
         <div class="flex items-center space-x-3">
-          <div class="w-2.5 h-2.5 bg-[#3b82f6] rounded-[2px]"></div>
+          <svg class="w-4 h-4 text-[#38bdf8] fill-current" viewBox="0 0 24 24">
+            <path d="M12 2.1c-1.1 1.7-6 8.3-6 12.4 0 3.6 2.7 6.5 6 6.5s6-2.9 6-6.5c0-4.1-4.9-10.7-6-12.4z"/>
+          </svg>
           <div class="flex flex-col">
             <span class="text-sm font-semibold tracking-wide text-slate-100 uppercase">
-              JalMarg <span class="text-slate-400 font-normal text-xs">जलमार्ग</span>
+              JALMARG <span class="text-slate-400 font-normal text-xs">जलमार्ग</span>
             </span>
             <span class="text-[10px] text-slate-400">Urban flood monitoring platform</span>
           </div>
@@ -451,14 +1128,35 @@
   <!-- Main Navigation -->
   <header class="navbar">
     <div class="brand-section">
-      <span class="brand-icon">■</span>
+      <svg class="w-4 h-4 text-[#38bdf8] fill-current" viewBox="0 0 24 24">
+        <path d="M12 2.1c-1.1 1.7-6 8.3-6 12.4 0 3.6 2.7 6.5 6 6.5s6-2.9 6-6.5c0-4.1-4.9-10.7-6-12.4z"/>
+      </svg>
       <span>JalMarg <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">| Urban flood nowcasting & safe routing</span></span>
     </div>
-    <nav class="nav-tabs">
-      <button class="tab-btn active" onclick="showTab('nowcast')">Live map & table</button>
-      <button class="tab-btn" onclick="showTab('alerts')">Active alerts</button>
-      <button class="tab-btn" onclick="showTab('municipal')">Municipal pumps (ICCC)</button>
-    </nav>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="showTab('nowcast')">Live map & table</button>
+        <button class="tab-btn" onclick="showTab('alerts')">Active alerts</button>
+        <button class="tab-btn" onclick="showTab('municipal')">Municipal pumps (ICCC)</button>
+      </nav>
+
+      <!-- Unified Sign In / Sign Up Trigger -->
+      <div id="authNavControls">
+        <button type="button" class="single-auth-btn" onclick="openAuthModal()">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span>Sign In / Sign Up</span>
+        </button>
+      </div>
+
+      <!-- Logged In User Pill -->
+      <div id="userProfileNavPill" style="display: none;">
+        <div class="user-profile-badge" onclick="openAuthModal()">
+          <span>👤</span>
+          <span id="navVehiclePlate">DL01AM0911</span>
+          <span style="font-size: 10px; background:#0284c7; padding: 1px 5px; border-radius: 3px;">Alerts On</span>
+        </div>
+      </div>
+    </div>
   </header>
 
   <main class="main-content">
@@ -486,6 +1184,12 @@
         <div class="map-header">
           <h3 id="mapLocationTitle">Connaught Place, Delhi — Street runoff & safe routing (3D Vector View)</h3>
           <div class="controls-row">
+            
+            <!-- Quick Safest Route Selector Button -->
+            <button type="button" class="btn-cta-enterprise px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" onclick="enableMapRoutePicking()">
+              <span>🧭 Choose Safest Path</span>
+            </button>
+
             <select id="quickCitySelect" class="scenario-dropdown" onchange="jumpToPreset(this.value)">
               <option value="28.6315,77.2167,Connaught Place Delhi" selected>CP, New Delhi</option>
               <option value="28.5450,77.1926,IIT Delhi">IIT Delhi</option>
@@ -494,6 +1198,7 @@
               <option value="13.0827,80.2707,Chennai Central">Chennai Central</option>
               <option value="23.2064,77.4601,AIIMS Bhopal">AIIMS, Bhopal</option>
               <option value="12.9716,77.5946,MG Road Bengaluru">Bengaluru Central</option>
+              <option value="26.9124,75.7873,Jaipur City">Jaipur Central</option>
             </select>
 
             <select id="scenarioSelector" class="scenario-dropdown" onchange="handleScenarioChange()">
@@ -526,12 +1231,11 @@
           <div><b>Default route:</b> <span id="defaultRouteStat">-</span></div>
           <div style="margin-top:4px;"><b>JalMarg safe route:</b> <span id="safeRouteStat">-</span></div>
           
-          <!-- Turn-by-Turn Deep Link CTA -->
           <div id="navActionContainer" style="margin-top: 10px; display: none;">
             <a id="gmapsNavBtn" href="#" target="_blank" rel="noopener noreferrer" 
-               class="flex items-center justify-center gap-2 w-full py-2 px-3 text-xs font-semibold rounded text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors shadow-sm text-center">
+               class="flex items-center justify-center gap-2 w-full py-2.5 px-3 text-xs font-bold rounded text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors shadow-sm text-center">
               <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-              <span>Navigate Safe Route in Google Maps</span>
+              <span>🚀 Start Turn-by-Turn GPS in Google Maps</span>
             </a>
           </div>
 
@@ -654,8 +1358,398 @@
     </div>
   </main>
 
+  <!-- ============================================================ -->
+  <!-- REAR-VIEW MIRROR CITIZEN PORTAL (ATMOSPHERIC MIST SEQUENCE) -->
+  <!-- ============================================================ -->
+  <div id="authModalOverlay" class="auth-modal-overlay">
+    
+    <!-- Fullscreen Vapor/Mist Curtain rolling over the map -->
+    <div class="mist-curtain">
+      <div class="mist-layer mist-layer-1"></div>
+      <div class="mist-layer mist-layer-2"></div>
+      <div class="mist-layer mist-layer-3"></div>
+      <div class="mist-layer mist-layer-4"></div>
+    </div>
+
+    <div class="poster-container">
+      
+      <!-- Graphic Orange Field -->
+      <div class="orange-canvas">
+        
+        <!-- Dismiss Modal Button -->
+        <button type="button" class="modal-dismiss-btn" onclick="closeAuthModal()" title="Close Portal">&times;</button>
+
+        <!-- Windshield Roof Silhouette -->
+        <div class="roof-wedge"></div>
+
+        <!-- Mirror Mount Stem Arm -->
+        <div class="mirror-mount-arm"></div>
+
+        <!-- Central Rear-View Mirror Chassis -->
+        <div class="rearview-mirror-container">
+          
+          <!-- Anti-Glare Flip Tab -->
+          <div class="mirror-flip-tab"></div>
+
+          <!-- Glass Interior Surface (Seamless borderless finish kissing the bezel) -->
+          <div class="mirror-reflective-surface">
+
+            <!-- SVG Perspective Horizon, Water & Highway -->
+            <svg class="mirror-landscape-bg" viewBox="0 0 650 250" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="skyWash" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#8ba1b9" />
+                  <stop offset="50%" stop-color="#b4c3d4" />
+                  <stop offset="100%" stop-color="#d3dee8" />
+                </linearGradient>
+
+                <linearGradient id="hillsWash" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#4a5c73" />
+                  <stop offset="100%" stop-color="#243144" />
+                </linearGradient>
+
+                <linearGradient id="floodWash" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#1c2d46" />
+                  <stop offset="100%" stop-color="#0f1929" />
+                </linearGradient>
+
+                <linearGradient id="roadWash" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#697a8e" />
+                  <stop offset="100%" stop-color="#495768" />
+                </linearGradient>
+              </defs>
+
+              <rect x="0" y="0" width="650" height="250" fill="url(#skyWash)" />
+
+              <!-- Distant Ridge -->
+              <path d="M 0 118 Q 70 106 140 114 Q 210 104 275 116 L 275 119 L 0 119 Z" fill="url(#hillsWash)" />
+              <path d="M 375 119 Q 420 106 490 112 Q 570 103 650 115 L 650 119 L 375 119 Z" fill="url(#hillsWash)" />
+
+              <!-- Inundated Shorelines -->
+              <polygon points="0,119 275,119 155,250 0,250" fill="url(#floodWash)" />
+              <polygon points="375,119 650,119 650,250 495,250" fill="url(#floodWash)" />
+
+              <!-- Vanishing Highway -->
+              <polygon points="275,119 375,119 495,250 155,250" fill="url(#roadWash)" />
+
+              <!-- Dashed Highway Centerline -->
+              <polygon points="324,119 326,119 327,129 323,129" fill="#e55e14" />
+              <polygon points="323,134 327,134 329,150 321,150" fill="#e55e14" />
+              <polygon points="321,157 329,157 332,180 318,180" fill="#e55e14" />
+              <polygon points="317,189 333,189 337,220 313,220" fill="#e55e14" />
+              <polygon points="312,231 338,231 343,250 307,250" fill="#e55e14" />
+            </svg>
+
+            <!-- Contrast Darkening Overlay Layer (Sharp Edge Cutoff, No Bleed) -->
+            <div class="mirror-glass-frost"></div>
+
+            <!-- Dialogue Content Inside the Mirror -->
+            <div class="mirror-content-box">
+              
+              <!-- Header with Water Droplet Logo and Mode Segmented Selector -->
+              <div class="mirror-header">
+                <div class="brand-mark">
+                  <div class="brand-logo-icon">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 2.1c-1.1 1.7-6 8.3-6 12.4 0 3.6 2.7 6.5 6 6.5s6-2.9 6-6.5c0-4.1-4.9-10.7-6-12.4z"/>
+                    </svg>
+                  </div>
+                  <div class="brand-name">JalMarg</div>
+                </div>
+
+                <!-- Mode Selector Tabs -->
+                <div id="mirrorModeTabsWrap" class="mirror-mode-tabs">
+                  <button type="button" id="tabBtnSignIn" class="mirror-tab-btn active" onclick="setMirrorMode('signin')">
+                    Sign In
+                  </button>
+                  <button type="button" id="tabBtnSignUp" class="mirror-tab-btn" onclick="setMirrorMode('signup')">
+                    Register Vehicle
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW 1: SIGN IN (Existing Users) -->
+              <form id="viewSignInForm" class="mirror-form-grid" onsubmit="event.preventDefault(); handleMirrorSignIn();">
+                <div class="field-column">
+                  <div class="input-box">
+                    <label class="field-label">Vehicle Registration No. (RTO) / Mobile</label>
+                    <div class="plate-input-wrapper">
+                      <span class="ind-badge">IND</span>
+                      <input type="text" id="signInIdentifierInput" class="plate-input" value="DL01AM0911" maxlength="13" required />
+                    </div>
+                  </div>
+
+                  <div class="input-box">
+                    <label class="field-label">Verification OTP</label>
+                    <input type="text" id="signInOtpInput" class="text-input" value="" maxlength="4" placeholder="Enter OTP" required />
+                  </div>
+                </div>
+
+                <div class="action-column">
+                  <div class="form-options-row">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="rememberMeCheck" checked />
+                      <span>Remember vehicle</span>
+                    </label>
+                    <button type="button" id="resendOtpBtn" class="resend-otp-btn" onclick="handleResendOtp()">
+                      Resend OTP (60s)
+                    </button>
+                  </div>
+
+                  <button type="submit" id="signInSubmitBtn" class="mirror-submit-btn">
+                    <span>Sign In</span>
+                    <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+                      <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+                    </svg>
+                  </button>
+
+                  <div class="demo-chip-bar">
+                    <span class="demo-tag">Quick Fill:</span>
+                    <button type="button" class="chip-btn" onclick="fillVehicleSignIn('DL01AM0911')">Delhi (450mm)</button>
+                    <button type="button" class="chip-btn" onclick="fillVehicleSignIn('MP04TA5510')">Bhopal (350mm)</button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- VIEW 2: SIGN UP (New Users / Register Vehicle) -->
+              <form id="viewSignUpForm" class="mirror-form-grid" style="display: none;" onsubmit="event.preventDefault(); handleMirrorSignUp();">
+                <div class="field-column">
+                  <div class="input-box">
+                    <label class="field-label">Vehicle Registration Number (VAHAN 4.0)</label>
+                    <div class="plate-input-wrapper">
+                      <span class="ind-badge">IND</span>
+                      <input type="text" id="signUpPlateInput" class="plate-input" placeholder="e.g. DL01AB1234, MP04CD5678" maxlength="13" required />
+                    </div>
+                  </div>
+
+                  <div class="input-box">
+                    <label class="field-label">Registered Owner Full Name</label>
+                    <input type="text" id="signUpNameInput" class="text-input" placeholder="e.g. Riya / Vijay" />
+                  </div>
+                </div>
+
+                <div class="action-column">
+                  <div class="input-box">
+                    <label class="field-label">Mobile for Flood Alerts (SMS &amp; WhatsApp)</label>
+                    <input type="text" id="signUpPhoneInput" class="text-input" value="" placeholder="+91 XXXXX XXXXX" required />
+                  </div>
+
+                  <button type="submit" id="signUpSubmitBtn" class="mirror-submit-btn">
+                    <span>Register &amp; Activate Alerts</span>
+                    <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+                      <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+                    </svg>
+                  </button>
+
+                  <div class="demo-chip-bar">
+                    <span class="demo-tag">Presets:</span>
+                    <button type="button" class="chip-btn" onclick="fillVehicleSignUp('DL02AB4321', 'Riya')">Delhi (300mm)</button>
+                    <button type="button" class="chip-btn" onclick="fillVehicleSignUp('RJ14CD7890', 'Aman')">Jaipur (200mm)</button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- VIEW 3: AUTHENTICATED DRIVER HUD (Displayed after login) -->
+              <div id="mirrorDashboardView" class="mirror-dashboard-view">
+                <div class="telemetry-strip">
+                  <div class="telemetry-item">
+                    <span class="t-label">Registered Driver</span>
+                    <span id="tOwner" class="t-val">Vijay</span>
+                  </div>
+                  <div class="telemetry-item">
+                    <span class="t-label">Vehicle Model</span>
+                    <span id="tModel" class="t-val">Mahindra Scorpio</span>
+                  </div>
+                  <div class="telemetry-item">
+                    <span class="t-label">Wading Clearance</span>
+                    <span id="tClearance" class="t-val" style="color: #f59e0b;">350 mm</span>
+                  </div>
+                  <div class="telemetry-item">
+                    <span class="t-label">Alert Target</span>
+                    <span id="tPhone" class="t-val">+91 88265 51819</span>
+                  </div>
+                </div>
+
+                <div id="hudInboxStrip" class="inbox-alert-strip">
+                  <span id="hudInboxMsg">🛡 Live telemetry active. Monitoring localized corridors.</span>
+                  <span style="font-family:'JetBrains Mono', monospace; font-size:9.5px; color:#94a3b8; white-space:nowrap; margin-left:8px;">Live</span>
+                </div>
+
+                <div class="dashboard-actions-row">
+                  <button type="button" class="btn-sim-alert" onclick="simulateMirrorAlert()">
+                    ⚡ Simulate Cloudburst Alert
+                  </button>
+                  <!-- Safest GPS Path Trigger inside the Mirror -->
+                  <button type="button" class="btn-gmaps-nav" onclick="launchSafeRouteGmaps()">
+                    🧭 Navigate Safest Route (Google Maps GPS)
+                  </button>
+                  <button type="button" class="btn-logout" onclick="handleMirrorLogout()">Sign Out</button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
   <script>
-    /* Atmospheric Rain Droplet & Visible Hydrologic Surface Engine */
+    /* ============================================================ */
+    /* DYNAMIC RTO & GEOLOCATION CITY PRESETS                       */
+    /* ============================================================ */
+    const RTO_CITY_COORDINATES = {
+      "DL": { 
+        name: "New Delhi", 
+        lat: 28.6315, lon: 77.2167, 
+        corridor: "Minto Bridge Underpass", 
+        detour: "Barakhamba Elevated Radial",
+        destLat: 28.6448, destLon: 77.2167,
+        detourLat: 28.6360, detourLon: 77.2250
+      },
+      "MH": { 
+        name: "Mumbai", 
+        lat: 19.0182, lon: 72.8434, 
+        corridor: "Hindmata Underpass", 
+        detour: "Dr. Ambedkar Road Flyover",
+        destLat: 19.0330, destLon: 72.8550,
+        detourLat: 19.0250, detourLon: 72.8480
+      },
+      "MP": { 
+        name: "Bhopal", 
+        lat: 23.2064, lon: 77.4601, 
+        corridor: "Hoshangabad Road Underpass", 
+        detour: "Link Road No. 1 Elevated Stretch",
+        destLat: 23.2200, destLon: 77.4700,
+        detourLat: 23.2120, detourLon: 77.4650
+      },
+      "KA": { 
+        name: "Bengaluru", 
+        lat: 12.9716, lon: 77.5946, 
+        corridor: "Okalipuram Underpass", 
+        detour: "Outer Ring Elevated Link",
+        destLat: 12.9850, destLon: 77.6100,
+        detourLat: 12.9780, detourLon: 77.6020
+      },
+      "TN": { 
+        name: "Chennai", 
+        lat: 13.0827, lon: 80.2707, 
+        corridor: "Gengu Reddy Subway", 
+        detour: "Poonamallee High Road",
+        destLat: 13.0950, destLon: 80.2850,
+        detourLat: 13.0890, detourLon: 80.2780
+      },
+      "RJ": { 
+        name: "Jaipur", 
+        lat: 26.9124, lon: 75.7873, 
+        corridor: "JLN Marg Underpass", 
+        detour: "Tonk Road Elevated Corridor",
+        destLat: 26.9250, destLon: 75.8000,
+        detourLat: 26.9180, detourLon: 75.7920
+      },
+      "TS": { 
+        name: "Hyderabad", 
+        lat: 17.3850, lon: 78.4867, 
+        corridor: "Malakpet Rail Underbridge", 
+        detour: "PVNR Elevated Expressway",
+        destLat: 17.4000, destLon: 78.4980,
+        detourLat: 17.3920, detourLon: 78.4920
+      },
+      "WB": { 
+        name: "Kolkata", 
+        lat: 22.5726, lon: 88.3639, 
+        corridor: "Ultadanga Underpass", 
+        detour: "Maa Flyover Bypass",
+        destLat: 22.5850, destLon: 88.3750,
+        detourLat: 22.5790, detourLon: 88.3690
+      }
+    };
+
+    function resolveUserCityContext(vehicleNumber) {
+      if (vehicleNumber && vehicleNumber.length >= 2) {
+        const prefix = vehicleNumber.substring(0, 2).toUpperCase();
+        if (RTO_CITY_COORDINATES[prefix]) {
+          return RTO_CITY_COORDINATES[prefix];
+        }
+      }
+
+      const title = document.getElementById("mapLocationTitle") ? document.getElementById("mapLocationTitle").innerText : "";
+      for (const key in RTO_CITY_COORDINATES) {
+        if (title.toLowerCase().includes(RTO_CITY_COORDINATES[key].name.toLowerCase())) {
+          return RTO_CITY_COORDINATES[key];
+        }
+      }
+      return RTO_CITY_COORDINATES["DL"];
+    }
+
+    function syncLocationToUser(vehicleNumber) {
+      const locCtx = resolveUserCityContext(vehicleNumber);
+      currentLat = locCtx.lat;
+      currentLon = locCtx.lon;
+      
+      const titleElem = document.getElementById('mapLocationTitle');
+      if (titleElem) {
+        titleElem.innerText = `${locCtx.name} — Street runoff & safe routing (3D Vector View)`;
+      }
+      
+      const select = document.getElementById("quickCitySelect");
+      if (select) {
+        for (let opt of select.options) {
+          if (opt.text.toLowerCase().includes(locCtx.name.toLowerCase())) {
+            select.value = opt.value;
+            break;
+          }
+        }
+      }
+
+      if (map) {
+        map.flyTo({ center: [currentLon, currentLat], zoom: 15, pitch: 50 });
+      }
+      clearRouting();
+      reloadSimulation();
+    }
+
+    /* Safest Google Maps Path Launchers */
+    function launchSafeRouteGmaps() {
+      const locCtx = resolveUserCityContext(currentAuthUser ? currentAuthUser.vehicle_number : null);
+      
+      let startLat = currentLat;
+      let startLon = currentLon;
+      let endLat = locCtx.destLat || (currentLat + 0.012);
+      let endLon = locCtx.destLon || (currentLon + 0.012);
+      let waypoints = [{ lat: locCtx.detourLat || (currentLat + 0.006), lon: locCtx.detourLon || (currentLon + 0.008) }];
+
+      if (routeClickPoints.length === 2 && map.getSource('safe-route')) {
+        startLat = routeClickPoints[0][1];
+        startLon = routeClickPoints[0][0];
+        endLat = routeClickPoints[1][1];
+        endLon = routeClickPoints[1][0];
+        const safeData = map.getSource('safe-route')._data;
+        if (safeData && safeData.geometry && safeData.geometry.coordinates) {
+          const coords = safeData.geometry.coordinates;
+          if (coords.length > 2) {
+            const midIdx = Math.floor(coords.length / 2);
+            waypoints = [{ lat: coords[midIdx][1], lon: coords[midIdx][0] }];
+          }
+        }
+      }
+
+      const url = buildGoogleMapsDeepLink({ lat: startLat, lng: startLon }, { lat: endLat, lng: endLon }, waypoints);
+      window.open(url, '_blank');
+
+      closeAuthModal();
+      triggerSafeRouting({ lat: startLat, lng: startLon }, { lat: endLat, lng: endLon });
+    }
+
+    function enableMapRoutePicking() {
+      clearRouting();
+      alert("Safe Path Selection Active:\n1. Click your origin point on the map (Green)\n2. Click your destination (Red)\nJalMarg will compute the hydrologic safe route and generate turn-by-turn Google Maps GPS.");
+    }
+
+    /* Atmospheric Rain Droplet Engine (Hero screen) */
     let heroActive = true;
     let heroTransitioning = false;
     let transitionProgress = 0;
@@ -827,7 +1921,6 @@
       const waterHeight = (currentLoad / 100) * maxSurfaceHeight;
       const waterLevel = height - waterHeight;
 
-      // 1. Surface Ripples
       for (let i = ripples.length - 1; i >= 0; i--) {
         const rp = ripples[i];
         rp.r += dt * 42;
@@ -847,7 +1940,6 @@
         ctx.restore();
       }
 
-      // 2. Realistic Rain Droplets
       for (let i = droplets.length - 1; i >= 0; i--) {
         const d = droplets[i];
         d.y += d.vy * dt;
@@ -883,7 +1975,6 @@
         }
       }
 
-      // 3. Illuminated Water Table Surface
       if (waterHeight >= 2) {
         const grad = ctx.createLinearGradient(0, waterLevel, 0, height);
         grad.addColorStop(0, "rgba(20, 68, 116, 0.65)");
@@ -944,6 +2035,359 @@
       btn.innerText = legend.classList.contains("minimized") ? "+" : "−";
     }
 
+    /* ============================================================ */
+    /* REAR-VIEW MIRROR CITIZEN PORTAL CONTROLLER                   */
+    /* ============================================================ */
+    let currentAuthUser = null;
+    let liveWatchId = null;
+    let otpTimerSeconds = 60;
+    let otpTimerInterval = null;
+
+    function startLiveTelemetryTracking(vehicleNumber) {
+      if (!navigator.geolocation) return;
+
+      liveWatchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          const payload = {
+            vehicle_number: vehicleNumber,
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+            speed_kmh: position.coords.speed ? (position.coords.speed * 3.6) : 0,
+            heading: position.coords.heading || 0
+          };
+
+          try {
+            const res = await fetch("/api/user/live-telemetry", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.hazard_detected && data.alert) {
+              const inboxStrip = document.getElementById("hudInboxStrip");
+              const inboxMsg = document.getElementById("hudInboxMsg");
+              if (inboxStrip && inboxMsg) {
+                inboxMsg.innerText = data.alert.message;
+                inboxStrip.style.borderLeftColor = "#ef4444";
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+              }
+            }
+          } catch (err) {
+            console.error("Telemetry sync error:", err);
+          }
+        },
+        (err) => console.warn("GPS tracking warning:", err.message),
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+    }
+
+    function stopLiveTelemetryTracking() {
+      if (liveWatchId !== null) {
+        navigator.geolocation.clearWatch(liveWatchId);
+        liveWatchId = null;
+      }
+    }
+
+    function startResendOtpTimer() {
+      otpTimerSeconds = 60;
+      const btn = document.getElementById("resendOtpBtn");
+      if (!btn) return;
+      btn.disabled = true;
+      btn.innerText = `Resend OTP (${otpTimerSeconds}s)`;
+
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+
+      otpTimerInterval = setInterval(() => {
+        otpTimerSeconds--;
+        if (otpTimerSeconds <= 0) {
+          clearInterval(otpTimerInterval);
+          otpTimerInterval = null;
+          btn.disabled = false;
+          btn.innerText = "Resend OTP";
+        } else {
+          btn.innerText = `Resend OTP (${otpTimerSeconds}s)`;
+        }
+      }, 1000);
+    }
+
+    function handleResendOtp() {
+      if (otpTimerSeconds > 0) return;
+      const otpInput = document.getElementById("signInOtpInput");
+      if (otpInput) {
+        otpInput.value = "";
+        otpInput.focus();
+      }
+      alert("New OTP dispatched to registered VAHAN mobile no.");
+      startResendOtpTimer();
+    }
+
+    function openAuthModal() {
+      const modal = document.getElementById("authModalOverlay");
+      modal.classList.add("active");
+      if (currentAuthUser) {
+        showMirrorDashboard();
+      } else {
+        setMirrorMode("signin");
+        startResendOtpTimer();
+      }
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById("authModalOverlay");
+      modal.classList.remove("active");
+      if (otpTimerInterval) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+      }
+    }
+
+    function setMirrorMode(mode) {
+      const viewIn = document.getElementById("viewSignInForm");
+      const viewUp = document.getElementById("viewSignUpForm");
+      const viewDash = document.getElementById("mirrorDashboardView");
+      const tabsWrap = document.getElementById("mirrorModeTabsWrap");
+
+      const btnIn = document.getElementById("tabBtnSignIn");
+      const btnUp = document.getElementById("tabBtnSignUp");
+
+      tabsWrap.style.display = "flex";
+      viewDash.style.display = "none";
+
+      if (mode === "signin") {
+        viewIn.style.display = "grid";
+        viewUp.style.display = "none";
+        btnIn.classList.add("active");
+        btnUp.classList.remove("active");
+        startResendOtpTimer();
+      } else {
+        viewIn.style.display = "none";
+        viewUp.style.display = "grid";
+        btnUp.classList.add("active");
+        btnIn.classList.remove("active");
+        if (otpTimerInterval) {
+          clearInterval(otpTimerInterval);
+          otpTimerInterval = null;
+        }
+      }
+    }
+
+    function fillVehicleSignIn(plate) {
+      document.getElementById("signInIdentifierInput").value = plate;
+    }
+
+    function fillVehicleSignUp(plate, name) {
+      document.getElementById("signUpPlateInput").value = plate;
+      if (name) document.getElementById("signUpNameInput").value = name;
+    }
+
+    async function handleMirrorSignIn() {
+      const identifier = document.getElementById("signInIdentifierInput").value.trim();
+      const otp = document.getElementById("signInOtpInput").value.trim();
+      const btn = document.getElementById("signInSubmitBtn");
+
+      if (!identifier) {
+        alert("Please enter a vehicle registration number or mobile.");
+        return;
+      }
+
+      if (!otp) {
+        alert("Please enter the verification OTP.");
+        document.getElementById("signInOtpInput").focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Verifying...</span>`;
+
+      try {
+        const res = await fetch("/api/auth/signin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier, otp })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          currentAuthUser = data.user;
+          updateNavbarAuth();
+          syncLocationToUser(currentAuthUser.vehicle_number);
+          startLiveTelemetryTracking(currentAuthUser.vehicle_number);
+          showMirrorDashboard();
+        } else {
+          fallbackMockAuth(identifier);
+        }
+      } catch (err) {
+        fallbackMockAuth(identifier);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <span>Sign In</span>
+          <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+          </svg>
+        `;
+      }
+    }
+
+    async function handleMirrorSignUp() {
+      const plate = document.getElementById("signUpPlateInput").value.trim();
+      const name = document.getElementById("signUpNameInput").value.trim();
+      const phone = document.getElementById("signUpPhoneInput").value.trim();
+      const btn = document.getElementById("signUpSubmitBtn");
+
+      if (!plate) {
+        alert("Please enter a vehicle registration plate number.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Registering...</span>`;
+
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vehicle_number: plate, full_name: name, phone: phone })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          currentAuthUser = data.user;
+          updateNavbarAuth();
+          syncLocationToUser(currentAuthUser.vehicle_number);
+          startLiveTelemetryTracking(currentAuthUser.vehicle_number);
+          showMirrorDashboard();
+        } else {
+          fallbackMockAuth(plate, name, phone);
+        }
+      } catch (err) {
+        fallbackMockAuth(plate, name, phone);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <span>Register &amp; Activate Alerts</span>
+          <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+          </svg>
+        `;
+      }
+    }
+
+    function fallbackMockAuth(identifier, name = "Registered Driver", phone = "+91 98201 44821") {
+      const isScorpio = identifier.includes("04") || identifier.toLowerCase().includes("scorpio");
+      const isNexon = identifier.includes("02") || identifier.toLowerCase().includes("nexon");
+      const isAmbulance = identifier.includes("AM") || identifier.includes("0911") || identifier.toLowerCase().includes("ambulance");
+      const depthMm = isAmbulance ? 450 : isScorpio ? 350 : isNexon ? 300 : 200;
+
+      currentAuthUser = {
+        full_name: name,
+        model: isAmbulance ? "Force Traveller (Ambulance)" : isScorpio ? "Mahindra Scorpio" : isNexon ? "Tata Nexon" : "Standard Hatchback",
+        wading_depth_cm: depthMm / 10.0,
+        wading_depth_mm: depthMm,
+        phone: phone,
+        vehicle_number: identifier
+      };
+      updateNavbarAuth();
+      syncLocationToUser(currentAuthUser.vehicle_number);
+      startLiveTelemetryTracking(currentAuthUser.vehicle_number);
+      showMirrorDashboard();
+    }
+
+    function showMirrorDashboard() {
+      document.getElementById("mirrorModeTabsWrap").style.display = "none";
+      document.getElementById("viewSignInForm").style.display = "none";
+      document.getElementById("viewSignUpForm").style.display = "none";
+      
+      const dash = document.getElementById("mirrorDashboardView");
+      dash.style.display = "flex";
+
+      const depthMm = currentAuthUser.wading_depth_mm || (currentAuthUser.wading_depth_cm ? Math.round(currentAuthUser.wading_depth_cm * 10) : 200);
+      const locCtx = resolveUserCityContext(currentAuthUser.vehicle_number);
+
+      document.getElementById("tOwner").innerText = currentAuthUser.full_name || "Registered Driver";
+      document.getElementById("tModel").innerText = currentAuthUser.model || currentAuthUser.vehicle_number;
+      document.getElementById("tClearance").innerText = `${depthMm} mm`;
+      document.getElementById("tPhone").innerText = currentAuthUser.phone;
+
+      const simBtn = document.querySelector(".btn-sim-alert");
+      if (simBtn) {
+        simBtn.innerText = `⚡ Simulate Cloudburst for ${locCtx.name}`;
+      }
+
+      const inboxMsg = document.getElementById("hudInboxMsg");
+      inboxMsg.innerText = `🛡️ Live telemetry active in ${locCtx.name}. Monitoring corridors for depth >${depthMm} mm.`;
+      document.getElementById("hudInboxStrip").style.borderLeftColor = "#22c55e";
+    }
+
+    async function simulateMirrorAlert() {
+      if (!currentAuthUser) return;
+      
+      const locCtx = resolveUserCityContext(currentAuthUser.vehicle_number);
+      const depthMm = currentAuthUser.wading_depth_mm || Math.round((currentAuthUser.wading_depth_cm || 20.0) * 10);
+      
+      let targetCorridor = locCtx.corridor;
+      let targetDepthMm = 285;
+
+      if (simulationData && simulationData.features && simulationData.features.length > 0) {
+        const activeStep = parseInt(document.getElementById('timeSlider').value) || 2;
+        const roads = simulationData.features
+          .filter(f => f.properties && f.properties.name && !f.properties.name.includes("Corridor") && !f.properties.name.includes("Link") && !f.properties.name.includes("Avenue"))
+          .sort((a, b) => ((b.properties.depth_timeline_cm || [0])[activeStep] || 0) - ((a.properties.depth_timeline_cm || [0])[activeStep] || 0));
+
+        if (roads.length > 0 && roads[0].properties.name) {
+          targetCorridor = roads[0].properties.name;
+          const roadDepth = (roads[0].properties.depth_timeline_cm || [0])[activeStep] || 0;
+          if (roadDepth > 5) targetDepthMm = Math.round(roadDepth * 10);
+        }
+      }
+
+      const isHazard = targetDepthMm >= depthMm;
+      const alertText = isHazard
+        ? `⚠️ Peak ponding at ${targetCorridor} is ${targetDepthMm} mm (Exceeds ${depthMm} mm limit). Divert to ${locCtx.detour}!`
+        : `ℹ️ ${targetCorridor} has ${targetDepthMm} mm standing water. Passable for your ${currentAuthUser.model} (Limit: ${depthMm} mm).`;
+
+      const msg = document.getElementById("hudInboxMsg");
+      const strip = document.getElementById("hudInboxStrip");
+      if (msg) msg.innerText = alertText;
+      if (strip) strip.style.borderLeftColor = isHazard ? "#ef4444" : "#22c55e";
+
+      try {
+        await fetch("/api/user/simulate-alert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vehicle_number: currentAuthUser.vehicle_number,
+            current_water_depth_cm: targetDepthMm / 10.0,
+            corridor_name: targetCorridor
+          })
+        });
+      } catch (err) {
+        console.warn("Alert simulation API sync warning:", err);
+      }
+    }
+
+    function handleMirrorLogout() {
+      stopLiveTelemetryTracking();
+      currentAuthUser = null;
+      updateNavbarAuth();
+      setMirrorMode("signin");
+    }
+
+    function updateNavbarAuth() {
+      const navControls = document.getElementById("authNavControls");
+      const navPill = document.getElementById("userProfileNavPill");
+
+      if (currentAuthUser) {
+        navControls.style.display = "none";
+        navPill.style.display = "block";
+        document.getElementById("navVehiclePlate").innerText = `${currentAuthUser.vehicle_number} (${currentAuthUser.model.split(' ')[0]})`;
+      } else {
+        navControls.style.display = "block";
+        navPill.style.display = "none";
+      }
+    }
+
     /* MapLibre 3D Vector Map & Dual Route Engine */
     let currentLat = 28.6315;
     let currentLon = 77.2167;
@@ -955,7 +2399,6 @@
     let startMarker = null;
     let endMarker = null;
 
-    // Non-blocking AbortControllers for asynchronous cancellation
     let nowcastAbortController = null;
     let routeAbortController = null;
     let pumpAbortController = null;
@@ -1112,6 +2555,9 @@
       map.flyTo({ center: [currentLon, currentLat], zoom: 15, pitch: 50 });
       clearRouting();
       reloadSimulation();
+      if (currentAuthUser) {
+        showMirrorDashboard();
+      }
     }
 
     function showTab(tabId) {
@@ -1189,7 +2635,7 @@
           <td style="font-weight:600;">${p.name}</td>
           <td><span style="text-transform: capitalize; color:var(--text-muted);">${p.highway}</span></td>
           <td>${p.slope_pct}%</td>
-          <td style="font-family:ui-monospace, monospace; font-weight:600; color:${getDepthColor(depth)}">${depth} cm</td>
+          <td style="font-family:'JetBrains Mono', monospace; font-weight:600; color:${getDepthColor(depth)}">${depth} cm</td>
           <td>${pill}</td>
         `;
         tbody.appendChild(row);
@@ -1256,12 +2702,12 @@
     }
 
     function buildGoogleMapsDeepLink(start, end, waypoints) {
-      const origin = `${start.lat},${start.lng}`;
-      const destination = `${end.lat},${end.lng}`;
+      const origin = `${start.lat},${start.lng || start.lon}`;
+      const destination = `${end.lat},${end.lng || end.lon}`;
       let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
 
       if (waypoints && waypoints.length > 0) {
-        const waypointsStr = waypoints.map(wp => `${wp.lat},${wp.lon}`).join('|');
+        const waypointsStr = waypoints.map(wp => `${wp.lat},${wp.lon || wp.lng}`).join('|');
         url += `&waypoints=${encodeURIComponent(waypointsStr)}`;
       }
       return url;
@@ -1322,7 +2768,6 @@
 
             document.getElementById('safeRouteStat').innerHTML = `<span style="color:#22c55e;">${safeRoute.max_water_depth_cm} cm (${safeRoute.status})</span>`;
 
-            // Build turn-by-turn deep link to native Google Maps
             const waypoints = data.nav_waypoints || [];
             navBtn.href = buildGoogleMapsDeepLink(start, end, waypoints);
             navContainer.style.display = 'block';
@@ -1382,8 +2827,8 @@
             tr.innerHTML = `
               <td><span class="status-pill status-danger">#${idx + 1}</span></td>
               <td style="font-weight:600;">${o.corridor} <span style="font-size:11px; color:var(--text-muted);">(${o.highway_class})</span></td>
-              <td style="font-family:ui-monospace, monospace; color:var(--text-main);">${o.inundation_volume_m3} m³</td>
-              <td style="font-family:ui-monospace, monospace; color:var(--status-red); font-weight:600;">${o.predicted_depth_cm} cm</td>
+              <td style="font-family:'JetBrains Mono', monospace; color:var(--text-main);">${o.inundation_volume_m3} m³</td>
+              <td style="font-family:'JetBrains Mono', monospace; color:var(--status-red); font-weight:600;">${o.predicted_depth_cm} cm</td>
               <td><b>${o.pumps_allocated}</b> units</td>
               <td><span class="status-pill status-warning">${o.recommended_action}</span></td>
             `;
@@ -1393,7 +2838,7 @@
         .catch(err => {
           if (err.name !== 'AbortError') {
             console.error("Pump fetch error:", err);
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--status-red);">Failed to run pump allocation model.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:color:var(--status-red);">Failed to run pump allocation model.</td></tr>';
           }
         });
     }
